@@ -9,8 +9,44 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ValidationRouteImport } from './routes/validation'
+import { Route as ResultatsRouteImport } from './routes/resultats'
+import { Route as GenerateurRouteImport } from './routes/generateur'
+import { Route as EleveRouteImport } from './routes/eleve'
+import { Route as BanqueRouteImport } from './routes/banque'
+import { Route as AssignationRouteImport } from './routes/assignation'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ValidationRoute = ValidationRouteImport.update({
+  id: '/validation',
+  path: '/validation',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResultatsRoute = ResultatsRouteImport.update({
+  id: '/resultats',
+  path: '/resultats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GenerateurRoute = GenerateurRouteImport.update({
+  id: '/generateur',
+  path: '/generateur',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EleveRoute = EleveRouteImport.update({
+  id: '/eleve',
+  path: '/eleve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BanqueRoute = BanqueRouteImport.update({
+  id: '/banque',
+  path: '/banque',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssignationRoute = AssignationRouteImport.update({
+  id: '/assignation',
+  path: '/assignation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -19,28 +55,116 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/assignation': typeof AssignationRoute
+  '/banque': typeof BanqueRoute
+  '/eleve': typeof EleveRoute
+  '/generateur': typeof GenerateurRoute
+  '/resultats': typeof ResultatsRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/assignation': typeof AssignationRoute
+  '/banque': typeof BanqueRoute
+  '/eleve': typeof EleveRoute
+  '/generateur': typeof GenerateurRoute
+  '/resultats': typeof ResultatsRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/assignation': typeof AssignationRoute
+  '/banque': typeof BanqueRoute
+  '/eleve': typeof EleveRoute
+  '/generateur': typeof GenerateurRoute
+  '/resultats': typeof ResultatsRoute
+  '/validation': typeof ValidationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/assignation'
+    | '/banque'
+    | '/eleve'
+    | '/generateur'
+    | '/resultats'
+    | '/validation'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/assignation'
+    | '/banque'
+    | '/eleve'
+    | '/generateur'
+    | '/resultats'
+    | '/validation'
+  id:
+    | '__root__'
+    | '/'
+    | '/assignation'
+    | '/banque'
+    | '/eleve'
+    | '/generateur'
+    | '/resultats'
+    | '/validation'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AssignationRoute: typeof AssignationRoute
+  BanqueRoute: typeof BanqueRoute
+  EleveRoute: typeof EleveRoute
+  GenerateurRoute: typeof GenerateurRoute
+  ResultatsRoute: typeof ResultatsRoute
+  ValidationRoute: typeof ValidationRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/validation': {
+      id: '/validation'
+      path: '/validation'
+      fullPath: '/validation'
+      preLoaderRoute: typeof ValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resultats': {
+      id: '/resultats'
+      path: '/resultats'
+      fullPath: '/resultats'
+      preLoaderRoute: typeof ResultatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/generateur': {
+      id: '/generateur'
+      path: '/generateur'
+      fullPath: '/generateur'
+      preLoaderRoute: typeof GenerateurRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eleve': {
+      id: '/eleve'
+      path: '/eleve'
+      fullPath: '/eleve'
+      preLoaderRoute: typeof EleveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/banque': {
+      id: '/banque'
+      path: '/banque'
+      fullPath: '/banque'
+      preLoaderRoute: typeof BanqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assignation': {
+      id: '/assignation'
+      path: '/assignation'
+      fullPath: '/assignation'
+      preLoaderRoute: typeof AssignationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -53,6 +177,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AssignationRoute: AssignationRoute,
+  BanqueRoute: BanqueRoute,
+  EleveRoute: EleveRoute,
+  GenerateurRoute: GenerateurRoute,
+  ResultatsRoute: ResultatsRoute,
+  ValidationRoute: ValidationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
