@@ -180,7 +180,7 @@ function GenerateurPage() {
                   <div className="flex items-center gap-2">
                     <CompetenceBadge competence={preview.competence} />
                     <span className="text-xs font-medium text-muted-foreground">{preview.niveau_vise}</span>
-                    <StatutBadge statut="to_review" />
+                    <StatutBadge statut="en_attente" />
                   </div>
                   <h3 className="font-semibold text-foreground">{preview.titre}</h3>
                   <p className="text-sm text-muted-foreground">{preview.consigne}</p>
