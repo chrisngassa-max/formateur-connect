@@ -33,9 +33,14 @@ export const Route = createRootRoute({
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Primo-Exercices — Plateforme pédagogique" },
       { name: "description", content: "Plateforme de création, validation et passation d'exercices de langue." },
-      { property: "og:title", content: "Primo-Exercices" },
-      { property: "og:description", content: "Plateforme pédagogique pour formateurs et apprenants." },
+      { property: "og:title", content: "Primo-Exercices — Plateforme pédagogique" },
+      { property: "og:description", content: "Plateforme de création, validation et passation d'exercices de langue." },
       { property: "og:type", content: "website" },
+      { name: "twitter:title", content: "Primo-Exercices — Plateforme pédagogique" },
+      { name: "twitter:description", content: "Plateforme de création, validation et passation d'exercices de langue." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8a7da378-1668-41ae-891b-58489f712015/id-preview-33262b2b--40e1ef11-31aa-4f06-9d23-453f47a2571d.lovable.app-1775860562446.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/8a7da378-1668-41ae-891b-58489f712015/id-preview-33262b2b--40e1ef11-31aa-4f06-9d23-453f47a2571d.lovable.app-1775860562446.png" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       {
