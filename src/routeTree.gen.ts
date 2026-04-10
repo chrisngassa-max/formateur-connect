@@ -16,6 +16,7 @@ import { Route as EleveRouteImport } from './routes/eleve'
 import { Route as BanqueRouteImport } from './routes/banque'
 import { Route as AssignationRouteImport } from './routes/assignation'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PlayTokenRouteImport } from './routes/play.$token'
 
 const ValidationRoute = ValidationRouteImport.update({
   id: '/validation',
@@ -52,6 +53,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PlayTokenRoute = PlayTokenRouteImport.update({
+  id: '/play/$token',
+  path: '/play/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -61,6 +67,7 @@ export interface FileRoutesByFullPath {
   '/generateur': typeof GenerateurRoute
   '/resultats': typeof ResultatsRoute
   '/validation': typeof ValidationRoute
+  '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -70,6 +77,7 @@ export interface FileRoutesByTo {
   '/generateur': typeof GenerateurRoute
   '/resultats': typeof ResultatsRoute
   '/validation': typeof ValidationRoute
+  '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   '/generateur': typeof GenerateurRoute
   '/resultats': typeof ResultatsRoute
   '/validation': typeof ValidationRoute
+  '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
     | '/generateur'
     | '/resultats'
     | '/validation'
+    | '/play/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
     | '/generateur'
     | '/resultats'
     | '/validation'
+    | '/play/$token'
   id:
     | '__root__'
     | '/'
@@ -109,6 +120,7 @@ export interface FileRouteTypes {
     | '/generateur'
     | '/resultats'
     | '/validation'
+    | '/play/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -119,6 +131,7 @@ export interface RootRouteChildren {
   GenerateurRoute: typeof GenerateurRoute
   ResultatsRoute: typeof ResultatsRoute
   ValidationRoute: typeof ValidationRoute
+  PlayTokenRoute: typeof PlayTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/play/$token': {
+      id: '/play/$token'
+      path: '/play/$token'
+      fullPath: '/play/$token'
+      preLoaderRoute: typeof PlayTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -183,6 +203,7 @@ const rootRouteChildren: RootRouteChildren = {
   GenerateurRoute: GenerateurRoute,
   ResultatsRoute: ResultatsRoute,
   ValidationRoute: ValidationRoute,
+  PlayTokenRoute: PlayTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
