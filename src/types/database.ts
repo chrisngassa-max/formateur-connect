@@ -70,16 +70,17 @@ export interface Assignation {
   group?: Group;
 }
 
-// Supabase generated types placeholder
+// Minimal Database type — uses `any` for Insert/Update to avoid strict generic issues.
+// Replace with generated types from `supabase gen types` for full type safety.
 export interface Database {
   public: {
     Tables: {
-      profiles: { Row: Profile };
-      groups: { Row: Group };
-      exercices: { Row: Exercice };
-      gabarits_pedagogiques: { Row: GabaritPedagogique };
-      resultats: { Row: Resultat };
-      assignations: { Row: Assignation };
+      profiles: { Row: Profile; Insert: any; Update: any };
+      groups: { Row: Group; Insert: any; Update: any };
+      exercices: { Row: Exercice; Insert: any; Update: any };
+      gabarits_pedagogiques: { Row: GabaritPedagogique; Insert: any; Update: any };
+      resultats: { Row: Resultat; Insert: any; Update: any };
+      assignations: { Row: Assignation; Insert: any; Update: any };
     };
   };
 }
