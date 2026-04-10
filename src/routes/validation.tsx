@@ -43,7 +43,7 @@ function ValidationPage() {
 
   const updateStatut = async (statut: 'rejete' | 'brouillon' | 'valide') => {
     if (!selected) return;
-    await (supabase as any)
+    await supabase
       .from('exercices')
       .update({ statut, titre: editTitle, consigne: editConsigne })
       .eq('id', selected.id);

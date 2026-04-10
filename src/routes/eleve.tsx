@@ -62,7 +62,7 @@ function ElevePage() {
     setScore(pct);
     setShowResult(true);
 
-    await (supabase as any).from('resultats').insert({
+    await supabase.from('resultats').insert({
       exercice_id: activeExercice.id,
       eleve_id: profile.id,
       score: pct,
