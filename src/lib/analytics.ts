@@ -30,7 +30,7 @@ export async function logEvent(params: {
       result: params.result,
       session_id: params.sessionId,
       group_id: params.groupId,
-      source_app: 'primo',
+      source_app: 'connect',
     });
   } catch (e) {
     console.error('[analytics] logEvent failed', e);
