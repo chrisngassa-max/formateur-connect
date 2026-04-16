@@ -71,7 +71,7 @@ function ResetPasswordPage() {
     // Déconnecter pour forcer une reconnexion propre avec le nouveau mot de passe
     await supabase.auth.signOut();
     setTimeout(() => {
-      void navigate({ to: '/' });
+      void navigate({ to: '/login' });
     }, 2000);
   };
 
@@ -99,7 +99,7 @@ function ResetPasswordPage() {
               <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">
                 Lien invalide ou expiré. Veuillez recommencer la procédure.
               </p>
-              <Button className="w-full" onClick={() => void navigate({ to: '/' })}>
+              <Button className="w-full" onClick={() => void navigate({ to: '/login' })}>
                 Retour à la connexion
               </Button>
             </div>

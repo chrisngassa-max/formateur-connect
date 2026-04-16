@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +13,8 @@ interface SignupFormProps {
 }
 
 export function SignupForm({ onBack }: SignupFormProps) {
+  const navigate = useNavigate();
+
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -35,7 +39,7 @@ export function SignupForm({ onBack }: SignupFormProps) {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+          // Pas de redirectTo absolu : Supabase utilise le Site URL configuré.
           data: {
             prenom: prenom.trim(),
             nom: nom.trim(),
@@ -61,7 +65,7 @@ export function SignupForm({ onBack }: SignupFormProps) {
           return;
         }
         setSuccess('Compte formateur créé ! Redirection…');
-        setTimeout(() => window.location.assign('/'), 800);
+        setTimeout(() => void navigate({ to: '/' }), 800);
       } else {
         setSuccess(
           'Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis reconnectez-vous : le rôle formateur sera attribué automatiquement.',
