@@ -18,9 +18,18 @@ export const Route = createFileRoute('/generateur')({
   component: GenerateurPage,
 });
 
+interface PointAMaitriser {
+  id: string;
+  libelle?: string;
+  nom?: string;
+  titre?: string;
+  competence?: CompetenceType;
+}
+
 function GenerateurPage() {
   const { user } = useAuth();
   const [gabarits, setGabarits] = useState<GabaritPedagogique[]>([]);
+  const [points, setPoints] = useState<PointAMaitriser[]>([]);
   const [form, setForm] = useState({
     gabarit_id: '',
     competence: '' as CompetenceType | '',
@@ -35,20 +44,7 @@ function GenerateurPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSuggestions, setReviewSuggestions] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [debugLoading, setDebugLoading] = useState(false);
-  // TODO: retirer ce panneau de diagnostic après résolution du problème Edge Functions
-  const [diagnostic, setDiagnostic] = useState<any>(null);
-  const [diagnosticLoading, setDiagnosticLoading] = useState(false);
 
-  const handleDebugEnv = async () => {
-    setDebugLoading(true);
-    setDebugInfo(null);
-    const { data, error: fnError } = await supabase.functions.invoke('debug-env-check', { body: {} });
-    setDebugLoading(false);
-    setDebugInfo(fnError ? { error: fnError.message } : data);
-    console.log('[debug-env-check]', { data, error: fnError });
-  };
 
   const handleFullDiagnostic = async () => {
     setDiagnosticLoading(true);
