@@ -78,6 +78,7 @@ function BanquePage() {
             <SelectItem value="all">Tous</SelectItem>
             <SelectItem value="brouillon">Brouillon</SelectItem>
             <SelectItem value="en_attente">En attente</SelectItem>
+            <SelectItem value="to_review">À relire</SelectItem>
             <SelectItem value="valide">Validé</SelectItem>
             <SelectItem value="rejete">Rejeté</SelectItem>
           </SelectContent>

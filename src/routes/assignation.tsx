@@ -33,7 +33,7 @@ function AssignationPage() {
   useEffect(() => {
     if (!profile) return;
     Promise.all([
-      supabase.from('exercices').select('*').eq('statut', 'valide').eq('formateur_id', profile.id),
+      supabase.from('exercices').select('*').eq('statut', 'published').eq('formateur_id', profile.id),
       supabase.from('profiles').select('*').eq('role', 'eleve'),
       supabase.from('groups').select('*').eq('formateur_id', profile.id),
     ]).then(([exRes, elRes, grRes]) => {
@@ -47,14 +47,15 @@ function AssignationPage() {
 
   const handleAssign = async () => {
     const payload: any = {
-      exercice_id: form.exercice_id,
-      mode: form.mode,
-      date_limite: form.date_limite || null,
+      exercise_id: form.exercice_id,
+      context: form.mode === 'individuel' ? 'devoir' : 'devoir',
+      due_date: form.date_limite || null,
+      assigned_by: profile?.id,
     };
-    if (form.mode === 'individuel') payload.eleve_id = form.eleve_id;
+    if (form.mode === 'individuel') payload.learner_id = form.eleve_id;
     else payload.group_id = form.group_id;
 
-    await supabase.from('assignations').insert(payload);
+    await supabase.from('exercise_assignments').insert(payload);
     setForm({ exercice_id: '', mode: 'individuel', eleve_id: '', group_id: '', date_limite: '' });
   };
 

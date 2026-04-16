@@ -28,6 +28,7 @@ function GenerateurPage() {
     theme: '',
     difficulte: '3',
     nb_items: '5',
+    point_a_maitriser_id: '',
   });
   const [preview, setPreview] = useState<any>(null);
   const [loading, setLoading] = useState(false);
@@ -58,6 +59,7 @@ function GenerateurPage() {
         nombre_items: Number(form.nb_items),
         difficulte: Number(form.difficulte),
         formateur_id: user.id,
+        point_a_maitriser_id: form.point_a_maitriser_id || null,
       },
     });
 
@@ -140,6 +142,11 @@ function GenerateurPage() {
             <div className="space-y-1.5">
               <Label>Thème</Label>
               <Input value={form.theme} onChange={(e) => setForm(p => ({ ...p, theme: e.target.value }))} placeholder="Ex: La vie quotidienne" />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Point à maîtriser (ID, optionnel)</Label>
+              <Input value={form.point_a_maitriser_id} onChange={(e) => setForm(p => ({ ...p, point_a_maitriser_id: e.target.value }))} placeholder="UUID du point à maîtriser" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">

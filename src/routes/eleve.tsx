@@ -29,7 +29,7 @@ function ElevePage() {
   useEffect(() => {
     if (!profile) return;
     Promise.all([
-      supabase.from('assignations').select('*, exercice:exercices(*)').eq('eleve_id', profile.id),
+      supabase.from('exercise_assignments').select('*, exercice:exercices(*)').eq('learner_id', profile.id),
       supabase.from('resultats').select('*, exercice:exercices(*)').eq('eleve_id', profile.id),
     ]).then(([assRes, resRes]) => {
       setAssignations(assRes.data ?? []);
@@ -38,7 +38,7 @@ function ElevePage() {
   }, [profile]);
 
   const completedIds = new Set(resultats.map(r => r.exercice_id));
-  const aFaire = assignations.filter(a => !completedIds.has(a.exercice_id));
+  const aFaire = assignations.filter(a => !completedIds.has(a.exercise_id));
   const termines = resultats;
 
   const tabs: { key: Tab; label: string; count: number }[] = [
@@ -103,7 +103,7 @@ function ElevePage() {
                   <div>
                     <p className="text-sm font-medium">{a.exercice?.titre || 'Exercice'}</p>
                     <p className="text-xs text-muted-foreground">
-                      {a.date_limite ? `Avant le ${new Date(a.date_limite).toLocaleDateString('fr-FR')}` : 'Pas de date limite'}
+                      {a.due_date ? `Avant le ${new Date(a.due_date).toLocaleDateString('fr-FR')}` : 'Pas de date limite'}
                     </p>
                   </div>
                 </div>
