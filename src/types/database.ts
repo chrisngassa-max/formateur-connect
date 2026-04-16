@@ -1,5 +1,5 @@
 export type CompetenceType = 'CO' | 'CE' | 'EE' | 'EO';
-export type ExerciceStatut = 'brouillon' | 'en_attente' | 'valide' | 'publie' | 'rejete' | 'archive';
+export type ExerciceStatut = 'brouillon' | 'en_attente' | 'to_review' | 'valide' | 'publie' | 'rejete' | 'archive';
 export type ExerciceFormat = 'qcm' | 'vrai_faux' | 'texte_libre' | 'association' | 'ordre';
 export type NiveauCECR = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 export type AssignationMode = 'individuel' | 'groupe';
