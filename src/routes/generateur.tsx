@@ -57,6 +57,10 @@ function GenerateurPage() {
 
   const handleGenerate = async () => {
     if (!user) return;
+    if (!form.point_a_maitriser_id) {
+      setError('Le champ « Point à maîtriser » est obligatoire.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setPreview(null);
@@ -72,7 +76,7 @@ function GenerateurPage() {
         nombre_items: Number(form.nb_items),
         difficulte: Number(form.difficulte),
         formateur_id: user.id,
-        point_a_maitriser_id: form.point_a_maitriser_id || null,
+        point_a_maitriser_id: form.point_a_maitriser_id,
       },
     });
 
@@ -158,8 +162,32 @@ function GenerateurPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Point à maîtriser (ID, optionnel)</Label>
-              <Input value={form.point_a_maitriser_id} onChange={(e) => setForm(p => ({ ...p, point_a_maitriser_id: e.target.value }))} placeholder="UUID du point à maîtriser" />
+              <Label>
+                Point à maîtriser <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={form.point_a_maitriser_id}
+                onValueChange={(v) => setForm(p => ({ ...p, point_a_maitriser_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un point à maîtriser (obligatoire)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {points.map(pt => (
+                    <SelectItem key={pt.id} value={pt.id}>
+                      {pt.libelle ?? pt.nom ?? pt.titre ?? pt.id}
+                    </SelectItem>
+                  ))}
+                  {points.length === 0 && (
+                    <SelectItem value="_none" disabled>Aucun point disponible</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {!form.point_a_maitriser_id && (
+                <p className="text-xs text-muted-foreground">
+                  Ce champ est requis pour générer un exercice.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -182,41 +210,14 @@ function GenerateurPage() {
               <p className="text-sm text-destructive rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">{error}</p>
             )}
 
-            <Button onClick={handleGenerate} disabled={loading} className="w-full gap-2">
+            <Button
+              onClick={handleGenerate}
+              disabled={loading || !form.point_a_maitriser_id}
+              className="w-full gap-2"
+            >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {loading ? 'Génération en cours…' : "Générer l'exercice"}
             </Button>
-
-            <div className="pt-2 border-t border-border space-y-2">
-              <Button onClick={handleDebugEnv} disabled={debugLoading} variant="outline" size="sm" className="w-full gap-2">
-                {debugLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Debug env (vérifier projet & clé Anthropic)
-              </Button>
-              {debugInfo && (
-                <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-48">
-{JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              )}
-
-              {/* TODO: retirer ce bloc Diagnostic Functions après résolution */}
-              <Button onClick={handleFullDiagnostic} disabled={diagnosticLoading} variant="outline" size="sm" className="w-full gap-2">
-                {diagnosticLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Diagnostic Functions (réseau complet)
-              </Button>
-              {diagnostic && (
-                <div className="space-y-2">
-                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
-                    Verdict : {diagnostic.verdict}
-                  </div>
-                  <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-80">
-{JSON.stringify(diagnostic, null, 2)}
-                  </pre>
-                  <Button onClick={handleCopyReport} variant="ghost" size="sm" className="w-full">
-                    Copier le rapport diagnostic
-                  </Button>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
 
