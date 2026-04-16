@@ -15,7 +15,6 @@ export function SignupForm({ onBack }: SignupFormProps) {
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [signupCode, setSignupCode] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -25,20 +24,13 @@ export function SignupForm({ onBack }: SignupFormProps) {
     setError('');
     setSuccess('');
 
-    // Validations basiques
     if (password.length < 8) {
       setError('Le mot de passe doit contenir au moins 8 caractères.');
-      return;
-    }
-    if (!signupCode.trim()) {
-      setError('Le code d’accès formateur est requis.');
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Création du compte. On stocke le signup_code en user_metadata
-      //    pour pouvoir l'utiliser après confirmation email si nécessaire.
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
         email: email.trim(),
         password,
@@ -47,7 +39,6 @@ export function SignupForm({ onBack }: SignupFormProps) {
           data: {
             prenom: prenom.trim(),
             nom: nom.trim(),
-            pending_formateur_code: signupCode.trim(),
           },
         },
       });
@@ -58,11 +49,9 @@ export function SignupForm({ onBack }: SignupFormProps) {
         return;
       }
 
-      // 2. Si une session existe déjà (email confirm désactivée), on appelle
-      //    immédiatement l'edge function pour octroyer le rôle.
+      // Si une session existe déjà (email confirm désactivée), on octroie le rôle immédiatement.
       if (signUpData.session) {
         const grantRes = await callGrantFormateur({
-          signupCode: signupCode.trim(),
           prenom: prenom.trim(),
           nom: nom.trim(),
         });
@@ -72,10 +61,8 @@ export function SignupForm({ onBack }: SignupFormProps) {
           return;
         }
         setSuccess('Compte formateur créé ! Redirection…');
-        // Recharge l'app pour rafraîchir le profil
         setTimeout(() => window.location.assign('/'), 800);
       } else {
-        // Confirmation email activée: pas encore de session.
         setSuccess(
           'Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis reconnectez-vous : le rôle formateur sera attribué automatiquement.',
         );
@@ -96,7 +83,7 @@ export function SignupForm({ onBack }: SignupFormProps) {
           </div>
           <CardTitle className="text-xl">Créer un compte formateur</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Un code d’accès est requis pour activer le rôle formateur.
+            Renseignez vos informations pour accéder à la plateforme.
           </p>
         </CardHeader>
         <CardContent>
@@ -126,17 +113,6 @@ export function SignupForm({ onBack }: SignupFormProps) {
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
               <p className="text-xs text-muted-foreground">8 caractères minimum.</p>
             </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="signupCode">Code d’accès formateur</Label>
-              <Input
-                id="signupCode"
-                value={signupCode}
-                onChange={(e) => setSignupCode(e.target.value)}
-                required
-                autoComplete="off"
-                placeholder="Code fourni par l’administrateur"
-              />
-            </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Création…' : 'Créer mon compte'}
             </Button>
@@ -154,12 +130,11 @@ export function SignupForm({ onBack }: SignupFormProps) {
   );
 }
 
-// Helper exporté pour réutilisation au moment du login post-confirmation.
+// Helper exporté pour réutilisation au moment du login post-confirmation email.
 export async function callGrantFormateur(params: {
-  signupCode: string;
   prenom?: string;
   nom?: string;
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+} = {}): Promise<{ ok: true } | { ok: false; error: string }> {
   const { data: sessionData } = await supabase.auth.getSession();
   const accessToken = sessionData.session?.access_token;
   if (!accessToken) return { ok: false, error: 'Session introuvable.' };
@@ -175,7 +150,6 @@ export async function callGrantFormateur(params: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        signup_code: params.signupCode,
         prenom: params.prenom,
         nom: params.nom,
       }),

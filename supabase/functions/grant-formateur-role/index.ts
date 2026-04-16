@@ -1,9 +1,6 @@
 // Edge Function: grant-formateur-role
-// Vérifie le JWT de l'appelant + un code d'inscription serveur,
-// puis octroie le rôle 'formateur' (user_roles + profiles.role).
-//
-// Secret obligatoire à définir dans Supabase (Edge Functions > Secrets):
-//   FORMATEUR_SIGNUP_CODE = "<le code partagé aux formateurs>"
+// Vérifie le JWT de l'appelant puis octroie le rôle 'formateur' (idempotent)
+// dans user_roles + profiles.role.
 //
 // SUPABASE_URL et SUPABASE_SERVICE_ROLE_KEY sont injectés automatiquement.
 
@@ -34,13 +31,7 @@ Deno.serve(async (req) => {
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
     const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const EXPECTED_CODE = Deno.env.get('FORMATEUR_SIGNUP_CODE');
 
-    if (!EXPECTED_CODE) {
-      return json({ error: 'Configuration serveur manquante' }, 500);
-    }
-
-    // Client admin pour vérifier le user via le JWT
     const admin = createClient(SUPABASE_URL, SERVICE_ROLE, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
@@ -52,20 +43,15 @@ Deno.serve(async (req) => {
     const userId = userData.user.id;
     const email = userData.user.email ?? '';
 
-    // --- 2. Vérifier le code (jamais user_id depuis le client) ---
-    let body: { signup_code?: string; prenom?: string; nom?: string } = {};
+    // --- 2. Lire le body (optionnel: prenom/nom pour profile) ---
+    let body: { prenom?: string; nom?: string } = {};
     try {
       body = await req.json();
     } catch {
-      return json({ error: 'Body invalide' }, 400);
-    }
-    const code = (body.signup_code ?? '').toString().trim();
-    if (!code || code !== EXPECTED_CODE) {
-      return json({ error: 'Code d’inscription invalide' }, 403);
+      // body vide accepté
     }
 
-    // --- 3. Upsert user_roles ---
-    // Tente d'abord avec l'enum 'app_role'. Si la table/contrainte diffère, on remonte l'erreur.
+    // --- 3. Upsert user_roles (idempotent) ---
     const { error: roleErr } = await admin
       .from('user_roles')
       .upsert(
@@ -77,24 +63,17 @@ Deno.serve(async (req) => {
       return json({ error: 'Impossible d’attribuer le rôle', detail: roleErr.message }, 500);
     }
 
-    // --- 4. Upsert profiles.role pour cohérence avec le code existant ---
+    // --- 4. Upsert profiles.role pour cohérence ---
     const prenom = (body.prenom ?? userData.user.user_metadata?.prenom ?? '').toString();
     const nom = (body.nom ?? userData.user.user_metadata?.nom ?? '').toString();
 
     const { error: profileErr } = await admin
       .from('profiles')
       .upsert(
-        {
-          id: userId,
-          email,
-          prenom,
-          nom,
-          role: 'formateur',
-        },
+        { id: userId, email, prenom, nom, role: 'formateur' },
         { onConflict: 'id' },
       );
     if (profileErr) {
-      // Non bloquant: le rôle dans user_roles fait foi.
       console.error('profiles upsert failed:', profileErr.message);
     }
 
