@@ -33,9 +33,11 @@ Deno.serve(async (req) => {
 
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!anthropicKey) {
-      return new Response(JSON.stringify({ error: 'Clé API Anthropic manquante' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[claude-review-exercise] Missing ANTHROPIC_API_KEY secret');
+      return new Response(
+        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY secret' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     // 2. Appeler Claude pour analyse pédagogique
