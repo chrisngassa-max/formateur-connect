@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +13,8 @@ interface SignupFormProps {
 }
 
 export function SignupForm({ onBack }: SignupFormProps) {
+  const navigate = useNavigate();
+
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
   const [email, setEmail] = useState('');
@@ -35,7 +39,7 @@ export function SignupForm({ onBack }: SignupFormProps) {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+          // Pas de redirectTo absolu : Supabase utilise le Site URL configuré.
           data: {
             prenom: prenom.trim(),
             nom: nom.trim(),

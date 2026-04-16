@@ -27,7 +27,23 @@ export function LoginForm() {
     setInfo('');
     setLoading(true);
     const { error: err } = await signIn(email, password);
-    if (err) setError(err.message);
+    if (err) {
+      // Log clair en console pour debug + message utilisateur explicite
+      console.error('[LoginForm] signIn failed', {
+        code: (err as any).code,
+        status: (err as any).status,
+        message: err.message,
+        name: err.name,
+      });
+      const code = (err as any).code as string | undefined;
+      const friendly =
+        code === 'invalid_credentials'
+          ? 'Email ou mot de passe incorrect.'
+          : code === 'email_not_confirmed'
+          ? 'Email non confirmé. Vérifiez votre boîte mail.'
+          : err.message;
+      setError(`${friendly}${code ? ` (${code})` : ''}`);
+    }
     setLoading(false);
   };
 
@@ -40,16 +56,13 @@ export function LoginForm() {
       return;
     }
     setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://captcf.lovable.app/auth/relay-reset',
-    });
+    // Pas de redirectTo absolu : Supabase utilise le Site URL configuré côté backend.
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email);
     setLoading(false);
     if (err) {
-      // On reste générique côté UI pour ne pas révéler l'existence d'un compte.
-      setInfo('Si cet email existe, un lien de réinitialisation a été envoyé.');
-    } else {
-      setInfo('Si cet email existe, un lien de réinitialisation a été envoyé.');
+      console.error('[LoginForm] resetPasswordForEmail failed', err);
     }
+    setInfo('Si cet email existe, un lien de réinitialisation a été envoyé.');
   };
 
   if (mode === 'forgot') {
