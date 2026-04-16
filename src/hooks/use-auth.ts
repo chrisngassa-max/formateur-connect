@@ -11,26 +11,16 @@ async function loadProfile(userId: string): Promise<Profile | null> {
   return (data as Profile | null) ?? null;
 }
 
-// Si l'utilisateur a été créé via le SignupForm avec un code formateur en attente
-// et que son profil ne reflète pas encore le rôle formateur, on rejoue l'octroi.
+// Si l'utilisateur n'a pas encore le rôle formateur (ex: après confirmation email),
+// on octroie le rôle automatiquement.
 async function maybeGrantPendingFormateur(user: User, profile: Profile | null): Promise<boolean> {
+  if (profile?.role === 'formateur') return false;
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
-  const pendingCode = meta.pending_formateur_code;
-  if (!pendingCode || typeof pendingCode !== 'string') return false;
-  if (profile?.role === 'formateur') {
-    await supabase.auth.updateUser({ data: { pending_formateur_code: null } }).catch(() => {});
-    return false;
-  }
   const res = await callGrantFormateur({
-    signupCode: pendingCode,
     prenom: typeof meta.prenom === 'string' ? meta.prenom : undefined,
     nom: typeof meta.nom === 'string' ? meta.nom : undefined,
   });
-  if (res.ok) {
-    await supabase.auth.updateUser({ data: { pending_formateur_code: null } }).catch(() => {});
-    return true;
-  }
-  return false;
+  return res.ok;
 }
 
 export function useAuth() {
