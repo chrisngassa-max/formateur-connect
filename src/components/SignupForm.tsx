@@ -65,7 +65,7 @@ export function SignupForm({ onBack }: SignupFormProps) {
           return;
         }
         setSuccess('Compte formateur créé ! Redirection…');
-        setTimeout(() => window.location.assign('/'), 800);
+        setTimeout(() => void navigate({ to: '/' }), 800);
       } else {
         setSuccess(
           'Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis reconnectez-vous : le rôle formateur sera attribué automatiquement.',

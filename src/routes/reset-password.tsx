@@ -71,7 +71,7 @@ function ResetPasswordPage() {
     // Déconnecter pour forcer une reconnexion propre avec le nouveau mot de passe
     await supabase.auth.signOut();
     setTimeout(() => {
-      void navigate({ to: '/' });
+      void navigate({ to: '/login' });
     }, 2000);
   };
 
