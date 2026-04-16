@@ -144,6 +144,11 @@ function GenerateurPage() {
               <Input value={form.theme} onChange={(e) => setForm(p => ({ ...p, theme: e.target.value }))} placeholder="Ex: La vie quotidienne" />
             </div>
 
+            <div className="space-y-1.5">
+              <Label>Point à maîtriser (ID, optionnel)</Label>
+              <Input value={form.point_a_maitriser_id} onChange={(e) => setForm(p => ({ ...p, point_a_maitriser_id: e.target.value }))} placeholder="UUID du point à maîtriser" />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Difficulté (1-5)</Label>
