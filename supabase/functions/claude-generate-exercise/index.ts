@@ -49,9 +49,11 @@ Deno.serve(async (req) => {
     // 3. Appeler Claude
     const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
     if (!anthropicKey) {
-      return new Response(JSON.stringify({ error: 'Clé API Anthropic manquante' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      console.error('[claude-generate-exercise] Missing ANTHROPIC_API_KEY secret');
+      return new Response(
+        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY secret' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+      );
     }
 
     const systemPrompt = `Tu es expert TCF IRN. Tu génères des exercices FLE pour apprenants A0/A1. Contextes : préfecture, médecin, CAF, logement. Inspire-toi du gabarit fourni. Évite de reproduire les exercices existants. Retourne uniquement du JSON strict : { titre, consigne, competence, niveau_cecrl, format, contenu: { items: [{question, options[], bonne_reponse, explication}] }, justification_pedagogique, duree_estimee_secondes }`;
