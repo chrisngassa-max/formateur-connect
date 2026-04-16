@@ -53,8 +53,7 @@ export interface Resultat {
   exercice_id: string;
   eleve_id: string;
   score: number;
-  temps_seconds: number;
-  reponses: Record<string, unknown>;
+  reponses_eleve: Record<string, unknown>;
   created_at: string;
   exercice?: Exercice;
   eleve?: Profile;
