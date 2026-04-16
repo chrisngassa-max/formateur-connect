@@ -40,9 +40,7 @@ export function LoginForm() {
       return;
     }
     setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email);
     setLoading(false);
     if (err) {
       // On reste générique côté UI pour ne pas révéler l'existence d'un compte.
