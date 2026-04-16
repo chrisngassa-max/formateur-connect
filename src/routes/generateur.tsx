@@ -18,9 +18,18 @@ export const Route = createFileRoute('/generateur')({
   component: GenerateurPage,
 });
 
+interface PointAMaitriser {
+  id: string;
+  libelle?: string;
+  nom?: string;
+  titre?: string;
+  competence?: CompetenceType;
+}
+
 function GenerateurPage() {
   const { user } = useAuth();
   const [gabarits, setGabarits] = useState<GabaritPedagogique[]>([]);
+  const [points, setPoints] = useState<PointAMaitriser[]>([]);
   const [form, setForm] = useState({
     gabarit_id: '',
     competence: '' as CompetenceType | '',
@@ -35,101 +44,23 @@ function GenerateurPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSuggestions, setReviewSuggestions] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [debugLoading, setDebugLoading] = useState(false);
-  // TODO: retirer ce panneau de diagnostic après résolution du problème Edge Functions
-  const [diagnostic, setDiagnostic] = useState<any>(null);
-  const [diagnosticLoading, setDiagnosticLoading] = useState(false);
-
-  const handleDebugEnv = async () => {
-    setDebugLoading(true);
-    setDebugInfo(null);
-    const { data, error: fnError } = await supabase.functions.invoke('debug-env-check', { body: {} });
-    setDebugLoading(false);
-    setDebugInfo(fnError ? { error: fnError.message } : data);
-    console.log('[debug-env-check]', { data, error: fnError });
-  };
-
-  const handleFullDiagnostic = async () => {
-    setDiagnosticLoading(true);
-    setDiagnostic(null);
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://bqknyiyywhvkdngraazk.supabase.co';
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
-    const projectRefMatch = supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/);
-    const projectRef = projectRefMatch?.[1] ?? null;
-    const maskedUrl = supabaseUrl.replace(/^(https:\/\/)([^.]{4})[^.]*(\.supabase\.co)/, '$1$2***$3');
-
-    const callFn = async (name: string, body: any) => {
-      const url = `${supabaseUrl}/functions/v1/${name}`;
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await res.text();
-        let parsed: any = text;
-        try { parsed = JSON.parse(text); } catch { /* not JSON */ }
-        return { status: res.status, ok: res.ok, body: parsed };
-      } catch (e: any) {
-        return { status: 0, ok: false, body: { error: `Network error: ${e?.message ?? String(e)}` } };
-      }
-    };
-
-    const debugRes = await callFn('debug-env-check', {});
-    const claudeRes = await callFn('claude-generate-exercise', { _diagnostic: true });
-
-    let verdict = 'Indéterminé';
-    const d = debugRes.status;
-    const c = claudeRes.status;
-    if (d === 404 && c !== 404) verdict = 'Cas A — debug-env-check NON DÉPLOYÉE (les autres functions existent)';
-    else if ((d === 401 || d === 403) && (c === 401 || c === 403)) verdict = 'Cas B — Problème de clé / permissions (anon key invalide ou JWT requis)';
-    else if (d === 404 && c === 404) verdict = 'Cas C — Mauvais backend / project_ref (aucune function trouvée)';
-    else if (d === 500) verdict = 'Cas D — Bug interne dans debug-env-check';
-    else if (d === 0) verdict = 'Erreur réseau / CORS / DNS sur l\'URL Supabase';
-    else if (d >= 200 && d < 300) verdict = 'debug-env-check fonctionne ✅';
-
-    const report = {
-      env: {
-        VITE_SUPABASE_URL: maskedUrl,
-        project_ref: projectRef,
-        VITE_SUPABASE_ANON_KEY_present: Boolean(anonKey),
-      },
-      calls: {
-        'debug-env-check': debugRes,
-        'claude-generate-exercise': claudeRes,
-      },
-      verdict,
-    };
-
-    setDiagnostic(report);
-    setDiagnosticLoading(false);
-    console.log('[diagnostic-functions]', report);
-  };
-
-  const handleCopyReport = async () => {
-    if (!diagnostic) return;
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(diagnostic, null, 2));
-      console.log('[diagnostic] rapport copié');
-    } catch (e) {
-      console.error('[diagnostic] copie impossible', e);
-    }
-  };
 
   useEffect(() => {
     supabase.from('gabarits_pedagogiques').select('*').then(({ data }) => {
       setGabarits((data as GabaritPedagogique[]) ?? []);
     });
+    supabase.from('points_a_maitriser').select('*').then(({ data }) => {
+      setPoints((data as PointAMaitriser[]) ?? []);
+    });
   }, []);
+
 
   const handleGenerate = async () => {
     if (!user) return;
+    if (!form.point_a_maitriser_id) {
+      setError('Le champ « Point à maîtriser » est obligatoire.');
+      return;
+    }
     setLoading(true);
     setError(null);
     setPreview(null);
@@ -145,7 +76,7 @@ function GenerateurPage() {
         nombre_items: Number(form.nb_items),
         difficulte: Number(form.difficulte),
         formateur_id: user.id,
-        point_a_maitriser_id: form.point_a_maitriser_id || null,
+        point_a_maitriser_id: form.point_a_maitriser_id,
       },
     });
 
@@ -231,8 +162,32 @@ function GenerateurPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label>Point à maîtriser (ID, optionnel)</Label>
-              <Input value={form.point_a_maitriser_id} onChange={(e) => setForm(p => ({ ...p, point_a_maitriser_id: e.target.value }))} placeholder="UUID du point à maîtriser" />
+              <Label>
+                Point à maîtriser <span className="text-destructive">*</span>
+              </Label>
+              <Select
+                value={form.point_a_maitriser_id}
+                onValueChange={(v) => setForm(p => ({ ...p, point_a_maitriser_id: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choisir un point à maîtriser (obligatoire)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {points.map(pt => (
+                    <SelectItem key={pt.id} value={pt.id}>
+                      {pt.libelle ?? pt.nom ?? pt.titre ?? pt.id}
+                    </SelectItem>
+                  ))}
+                  {points.length === 0 && (
+                    <SelectItem value="_none" disabled>Aucun point disponible</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+              {!form.point_a_maitriser_id && (
+                <p className="text-xs text-muted-foreground">
+                  Ce champ est requis pour générer un exercice.
+                </p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -255,41 +210,14 @@ function GenerateurPage() {
               <p className="text-sm text-destructive rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2">{error}</p>
             )}
 
-            <Button onClick={handleGenerate} disabled={loading} className="w-full gap-2">
+            <Button
+              onClick={handleGenerate}
+              disabled={loading || !form.point_a_maitriser_id}
+              className="w-full gap-2"
+            >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {loading ? 'Génération en cours…' : "Générer l'exercice"}
             </Button>
-
-            <div className="pt-2 border-t border-border space-y-2">
-              <Button onClick={handleDebugEnv} disabled={debugLoading} variant="outline" size="sm" className="w-full gap-2">
-                {debugLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Debug env (vérifier projet & clé Anthropic)
-              </Button>
-              {debugInfo && (
-                <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-48">
-{JSON.stringify(debugInfo, null, 2)}
-                </pre>
-              )}
-
-              {/* TODO: retirer ce bloc Diagnostic Functions après résolution */}
-              <Button onClick={handleFullDiagnostic} disabled={diagnosticLoading} variant="outline" size="sm" className="w-full gap-2">
-                {diagnosticLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Diagnostic Functions (réseau complet)
-              </Button>
-              {diagnostic && (
-                <div className="space-y-2">
-                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
-                    Verdict : {diagnostic.verdict}
-                  </div>
-                  <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-80">
-{JSON.stringify(diagnostic, null, 2)}
-                  </pre>
-                  <Button onClick={handleCopyReport} variant="ghost" size="sm" className="w-full">
-                    Copier le rapport diagnostic
-                  </Button>
-                </div>
-              )}
-            </div>
           </CardContent>
         </Card>
 
