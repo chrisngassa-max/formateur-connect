@@ -29,7 +29,7 @@ function ValidationPage() {
     supabase
       .from('exercices')
       .select('*')
-      .in('statut', ['en_attente', 'to_review'])
+      .in('statut', ['en_attente', 'draft'])
       .eq('formateur_id', profile.id)
       .order('created_at', { ascending: false })
       .then(({ data }) => setExercices((data as Exercice[]) ?? []));

@@ -2,7 +2,7 @@ import type { ExerciceStatut } from '@/types/database';
 
 const statutConfig: Record<ExerciceStatut, { label: string; className: string }> = {
   brouillon:  { label: 'Brouillon',  className: 'bg-muted text-muted-foreground' },
-  to_review:  { label: 'À relire',  className: 'bg-warning text-warning-foreground' },
+  draft:      { label: 'Brouillon (draft)', className: 'bg-muted text-muted-foreground' },
   en_attente: { label: 'En attente', className: 'bg-warning text-warning-foreground' },
   valide:     { label: 'Validé',     className: 'bg-success text-success-foreground' },
   publie:     { label: 'Publié',     className: 'bg-primary text-primary-foreground' },
