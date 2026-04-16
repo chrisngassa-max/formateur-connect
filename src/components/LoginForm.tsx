@@ -40,7 +40,9 @@ export function LoginForm() {
       return;
     }
     setLoading(true);
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email);
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://captcf.lovable.app/auth/relay-reset',
+    });
     setLoading(false);
     if (err) {
       // On reste générique côté UI pour ne pas révéler l'existence d'un compte.
