@@ -45,84 +45,15 @@ function GenerateurPage() {
   const [reviewSuggestions, setReviewSuggestions] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-
-  const handleFullDiagnostic = async () => {
-    setDiagnosticLoading(true);
-    setDiagnostic(null);
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? 'https://bqknyiyywhvkdngraazk.supabase.co';
-    const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
-    const projectRefMatch = supabaseUrl.match(/^https:\/\/([^.]+)\.supabase\.co/);
-    const projectRef = projectRefMatch?.[1] ?? null;
-    const maskedUrl = supabaseUrl.replace(/^(https:\/\/)([^.]{4})[^.]*(\.supabase\.co)/, '$1$2***$3');
-
-    const callFn = async (name: string, body: any) => {
-      const url = `${supabaseUrl}/functions/v1/${name}`;
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            apikey: anonKey,
-            Authorization: `Bearer ${anonKey}`,
-          },
-          body: JSON.stringify(body),
-        });
-        const text = await res.text();
-        let parsed: any = text;
-        try { parsed = JSON.parse(text); } catch { /* not JSON */ }
-        return { status: res.status, ok: res.ok, body: parsed };
-      } catch (e: any) {
-        return { status: 0, ok: false, body: { error: `Network error: ${e?.message ?? String(e)}` } };
-      }
-    };
-
-    const debugRes = await callFn('debug-env-check', {});
-    const claudeRes = await callFn('claude-generate-exercise', { _diagnostic: true });
-
-    let verdict = 'Indéterminé';
-    const d = debugRes.status;
-    const c = claudeRes.status;
-    if (d === 404 && c !== 404) verdict = 'Cas A — debug-env-check NON DÉPLOYÉE (les autres functions existent)';
-    else if ((d === 401 || d === 403) && (c === 401 || c === 403)) verdict = 'Cas B — Problème de clé / permissions (anon key invalide ou JWT requis)';
-    else if (d === 404 && c === 404) verdict = 'Cas C — Mauvais backend / project_ref (aucune function trouvée)';
-    else if (d === 500) verdict = 'Cas D — Bug interne dans debug-env-check';
-    else if (d === 0) verdict = 'Erreur réseau / CORS / DNS sur l\'URL Supabase';
-    else if (d >= 200 && d < 300) verdict = 'debug-env-check fonctionne ✅';
-
-    const report = {
-      env: {
-        VITE_SUPABASE_URL: maskedUrl,
-        project_ref: projectRef,
-        VITE_SUPABASE_ANON_KEY_present: Boolean(anonKey),
-      },
-      calls: {
-        'debug-env-check': debugRes,
-        'claude-generate-exercise': claudeRes,
-      },
-      verdict,
-    };
-
-    setDiagnostic(report);
-    setDiagnosticLoading(false);
-    console.log('[diagnostic-functions]', report);
-  };
-
-  const handleCopyReport = async () => {
-    if (!diagnostic) return;
-    try {
-      await navigator.clipboard.writeText(JSON.stringify(diagnostic, null, 2));
-      console.log('[diagnostic] rapport copié');
-    } catch (e) {
-      console.error('[diagnostic] copie impossible', e);
-    }
-  };
-
   useEffect(() => {
     supabase.from('gabarits_pedagogiques').select('*').then(({ data }) => {
       setGabarits((data as GabaritPedagogique[]) ?? []);
     });
+    supabase.from('points_a_maitriser').select('*').then(({ data }) => {
+      setPoints((data as PointAMaitriser[]) ?? []);
+    });
   }, []);
+
 
   const handleGenerate = async () => {
     if (!user) return;
