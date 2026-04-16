@@ -1,19 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
+// Valeurs publiques (anon key) — utilisées en fallback si les env vars Vite ne sont pas injectées.
+const FALLBACK_URL = 'https://bqknyiyywhvkdngraazk.supabase.co';
+const FALLBACK_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxa255aXl5d2h2a2RuZ3JhYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTE4MTMsImV4cCI6MjA4OTMyNzgxM30.3YX2kpfi34laa63PeR92oXp-pQtgEdPox28ZH6W6dQc';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  const missing = [
-    !supabaseUrl ? 'VITE_SUPABASE_URL' : null,
-    !supabaseAnonKey ? 'VITE_SUPABASE_ANON_KEY' : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
-  // Fail-fast explicite — message clair en dev et en prod.
-  throw new Error(
-    `[supabase] Configuration manquante : ${missing}. ` +
-      `Définissez ces variables d'environnement avant de démarrer l'app.`,
+const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? FALLBACK_URL;
+const supabaseAnonKey =
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ?? FALLBACK_ANON_KEY;
+
+if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
+  console.warn(
+    '[supabase] VITE_SUPABASE_URL ou VITE_SUPABASE_ANON_KEY manquante — utilisation du fallback intégré.',
   );
 }
 
