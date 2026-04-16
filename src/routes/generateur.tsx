@@ -35,6 +35,17 @@ function GenerateurPage() {
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewSuggestions, setReviewSuggestions] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugLoading, setDebugLoading] = useState(false);
+
+  const handleDebugEnv = async () => {
+    setDebugLoading(true);
+    setDebugInfo(null);
+    const { data, error: fnError } = await supabase.functions.invoke('debug-env-check', { body: {} });
+    setDebugLoading(false);
+    setDebugInfo(fnError ? { error: fnError.message } : data);
+    console.log('[debug-env-check]', { data, error: fnError });
+  };
 
   useEffect(() => {
     supabase.from('gabarits_pedagogiques').select('*').then(({ data }) => {
@@ -173,6 +184,18 @@ function GenerateurPage() {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
               {loading ? 'Génération en cours…' : "Générer l'exercice"}
             </Button>
+
+            <div className="pt-2 border-t border-border space-y-2">
+              <Button onClick={handleDebugEnv} disabled={debugLoading} variant="outline" size="sm" className="w-full gap-2">
+                {debugLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Debug env (vérifier projet & clé Anthropic)
+              </Button>
+              {debugInfo && (
+                <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-48">
+{JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              )}
+            </div>
           </CardContent>
         </Card>
 
