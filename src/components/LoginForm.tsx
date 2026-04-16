@@ -41,7 +41,7 @@ export function LoginForm() {
     }
     setLoading(true);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://captcf.lovable.app/auth/relay-reset',
+      redirectTo: 'https://formateur-code-lab.lovable.app/reset-password',
     });
     setLoading(false);
     if (err) {
