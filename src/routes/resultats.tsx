@@ -66,9 +66,7 @@ function ResultatsPage() {
                       {r.score}%
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">
-                    {r.temps_seconds > 0 ? `${Math.floor(r.temps_seconds / 60)}m ${r.temps_seconds % 60}s` : '—'}
-                  </td>
+                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">—</td>
                   <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">
                     {new Date(r.created_at).toLocaleDateString('fr-FR')}
                   </td>

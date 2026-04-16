@@ -66,8 +66,7 @@ function ElevePage() {
       exercice_id: activeExercice.id,
       eleve_id: profile.id,
       score: pct,
-      temps_seconds: 0,
-      reponses: answers,
+      reponses_eleve: answers,
     });
   };
 
