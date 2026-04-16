@@ -270,6 +270,25 @@ function GenerateurPage() {
 {JSON.stringify(debugInfo, null, 2)}
                 </pre>
               )}
+
+              {/* TODO: retirer ce bloc Diagnostic Functions après résolution */}
+              <Button onClick={handleFullDiagnostic} disabled={diagnosticLoading} variant="outline" size="sm" className="w-full gap-2">
+                {diagnosticLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Diagnostic Functions (réseau complet)
+              </Button>
+              {diagnostic && (
+                <div className="space-y-2">
+                  <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs font-medium text-foreground">
+                    Verdict : {diagnostic.verdict}
+                  </div>
+                  <pre className="text-xs bg-muted rounded-md p-2 overflow-auto max-h-80">
+{JSON.stringify(diagnostic, null, 2)}
+                  </pre>
+                  <Button onClick={handleCopyReport} variant="ghost" size="sm" className="w-full">
+                    Copier le rapport diagnostic
+                  </Button>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
