@@ -26,7 +26,7 @@ async function maybeGrantPendingFormateur(user: User, profile: Profile | null): 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(!isServer);
+  const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
 
   useEffect(() => {
