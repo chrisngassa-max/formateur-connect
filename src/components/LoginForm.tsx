@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, ArrowLeft } from 'lucide-react';
+import { GraduationCap, ArrowLeft, Loader2 } from 'lucide-react';
 
 export function LoginForm() {
   const { signIn } = useAuth();
@@ -23,28 +23,42 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    console.log('[LoginForm] submit triggered', { email: email ? '***' : '(empty)' });
     setError('');
     setInfo('');
-    setLoading(true);
-    const { error: err } = await signIn(email, password);
-    if (err) {
-      // Log clair en console pour debug + message utilisateur explicite
-      console.error('[LoginForm] signIn failed', {
-        code: (err as any).code,
-        status: (err as any).status,
-        message: err.message,
-        name: err.name,
-      });
-      const code = (err as any).code as string | undefined;
-      const friendly =
-        code === 'invalid_credentials'
-          ? 'Email ou mot de passe incorrect.'
-          : code === 'email_not_confirmed'
-          ? 'Email non confirmé. Vérifiez votre boîte mail.'
-          : err.message;
-      setError(`${friendly}${code ? ` (${code})` : ''}`);
+    if (!email || !password) {
+      setError('Veuillez saisir votre email et votre mot de passe.');
+      return;
     }
-    setLoading(false);
+    setLoading(true);
+    try {
+      const { error: err } = await signIn(email, password);
+      if (err) {
+        console.error('[LoginForm] signIn failed', {
+          code: (err as any).code,
+          status: (err as any).status,
+          message: err.message,
+          name: err.name,
+        });
+        const code = (err as any).code as string | undefined;
+        const friendly =
+          code === 'invalid_credentials'
+            ? 'Email ou mot de passe incorrect.'
+            : code === 'email_not_confirmed'
+            ? 'Email non confirmé. Vérifiez votre boîte mail.'
+            : err.message;
+        setError(`${friendly}${code ? ` (${code})` : ''}`);
+        return;
+      }
+      console.log('[LoginForm] signIn success');
+      // Navigation gérée par onAuthStateChange via AppLayout/router guards
+    } catch (caught) {
+      console.error('[LoginForm] signIn threw', caught);
+      setError('Erreur réseau. Veuillez réessayer.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgot = async (e: React.FormEvent) => {
@@ -136,14 +150,21 @@ export function LoginForm() {
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" disabled={loading} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Mot de passe</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" disabled={loading} />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Connexion…' : 'Se connecter'}
+            <Button type="submit" className="w-full" disabled={loading || !email || !password}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Connexion…
+                </>
+              ) : (
+                'Se connecter'
+              )}
             </Button>
             <div className="text-center">
               <button
