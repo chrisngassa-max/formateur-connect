@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
+import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResultatsRouteImport } from './routes/resultats'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as GenerateurRouteImport } from './routes/generateur'
 import { Route as EleveRouteImport } from './routes/eleve'
 import { Route as BanqueRouteImport } from './routes/banque'
@@ -24,6 +26,11 @@ const ValidationRoute = ValidationRouteImport.update({
   path: '/validation',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResultatsRoute = ResultatsRouteImport.update({
   id: '/resultats',
   path: '/resultats',
@@ -32,6 +39,11 @@ const ResultatsRoute = ResultatsRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GenerateurRoute = GenerateurRouteImport.update({
@@ -71,8 +83,10 @@ export interface FileRoutesByFullPath {
   '/banque': typeof BanqueRoute
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
+  '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
+  '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
   '/play/$token': typeof PlayTokenRoute
 }
@@ -82,8 +96,10 @@ export interface FileRoutesByTo {
   '/banque': typeof BanqueRoute
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
+  '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
+  '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
   '/play/$token': typeof PlayTokenRoute
 }
@@ -94,8 +110,10 @@ export interface FileRoutesById {
   '/banque': typeof BanqueRoute
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
+  '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
+  '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
   '/play/$token': typeof PlayTokenRoute
 }
@@ -107,8 +125,10 @@ export interface FileRouteTypes {
     | '/banque'
     | '/eleve'
     | '/generateur'
+    | '/login'
     | '/reset-password'
     | '/resultats'
+    | '/signup'
     | '/validation'
     | '/play/$token'
   fileRoutesByTo: FileRoutesByTo
@@ -118,8 +138,10 @@ export interface FileRouteTypes {
     | '/banque'
     | '/eleve'
     | '/generateur'
+    | '/login'
     | '/reset-password'
     | '/resultats'
+    | '/signup'
     | '/validation'
     | '/play/$token'
   id:
@@ -129,8 +151,10 @@ export interface FileRouteTypes {
     | '/banque'
     | '/eleve'
     | '/generateur'
+    | '/login'
     | '/reset-password'
     | '/resultats'
+    | '/signup'
     | '/validation'
     | '/play/$token'
   fileRoutesById: FileRoutesById
@@ -141,8 +165,10 @@ export interface RootRouteChildren {
   BanqueRoute: typeof BanqueRoute
   EleveRoute: typeof EleveRoute
   GenerateurRoute: typeof GenerateurRoute
+  LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResultatsRoute: typeof ResultatsRoute
+  SignupRoute: typeof SignupRoute
   ValidationRoute: typeof ValidationRoute
   PlayTokenRoute: typeof PlayTokenRoute
 }
@@ -154,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/validation'
       fullPath: '/validation'
       preLoaderRoute: typeof ValidationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resultats': {
@@ -168,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/generateur': {
@@ -221,8 +261,10 @@ const rootRouteChildren: RootRouteChildren = {
   BanqueRoute: BanqueRoute,
   EleveRoute: EleveRoute,
   GenerateurRoute: GenerateurRoute,
+  LoginRoute: LoginRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ResultatsRoute: ResultatsRoute,
+  SignupRoute: SignupRoute,
   ValidationRoute: ValidationRoute,
   PlayTokenRoute: PlayTokenRoute,
 }
