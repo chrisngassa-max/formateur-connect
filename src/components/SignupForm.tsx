@@ -1,0 +1,191 @@
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { GraduationCap, ArrowLeft } from 'lucide-react';
+
+interface SignupFormProps {
+  onBack: () => void;
+}
+
+export function SignupForm({ onBack }: SignupFormProps) {
+  const [prenom, setPrenom] = useState('');
+  const [nom, setNom] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [signupCode, setSignupCode] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+
+    // Validations basiques
+    if (password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    if (!signupCode.trim()) {
+      setError('Le code d’accès formateur est requis.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. Création du compte. On stocke le signup_code en user_metadata
+      //    pour pouvoir l'utiliser après confirmation email si nécessaire.
+      const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          emailRedirectTo: typeof window !== 'undefined' ? `${window.location.origin}/` : undefined,
+          data: {
+            prenom: prenom.trim(),
+            nom: nom.trim(),
+            pending_formateur_code: signupCode.trim(),
+          },
+        },
+      });
+
+      if (signUpErr) {
+        setError(signUpErr.message);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Si une session existe déjà (email confirm désactivée), on appelle
+      //    immédiatement l'edge function pour octroyer le rôle.
+      if (signUpData.session) {
+        const grantRes = await callGrantFormateur({
+          signupCode: signupCode.trim(),
+          prenom: prenom.trim(),
+          nom: nom.trim(),
+        });
+        if (!grantRes.ok) {
+          setError(grantRes.error ?? 'Erreur lors de l’attribution du rôle formateur.');
+          setLoading(false);
+          return;
+        }
+        setSuccess('Compte formateur créé ! Redirection…');
+        // Recharge l'app pour rafraîchir le profil
+        setTimeout(() => window.location.assign('/'), 800);
+      } else {
+        // Confirmation email activée: pas encore de session.
+        setSuccess(
+          'Compte créé. Vérifiez votre boîte mail pour confirmer votre adresse, puis reconnectez-vous : le rôle formateur sera attribué automatiquement.',
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erreur inattendue');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+            <GraduationCap className="h-6 w-6 text-primary" />
+          </div>
+          <CardTitle className="text-xl">Créer un compte formateur</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Un code d’accès est requis pour activer le rôle formateur.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 rounded-md px-3 py-2">{error}</p>
+            )}
+            {success && (
+              <p className="text-sm text-primary bg-primary/10 rounded-md px-3 py-2">{success}</p>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="prenom">Prénom</Label>
+                <Input id="prenom" value={prenom} onChange={(e) => setPrenom(e.target.value)} required maxLength={60} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="nom">Nom</Label>
+                <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} required maxLength={60} />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={255} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="password">Mot de passe</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
+              <p className="text-xs text-muted-foreground">8 caractères minimum.</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="signupCode">Code d’accès formateur</Label>
+              <Input
+                id="signupCode"
+                value={signupCode}
+                onChange={(e) => setSignupCode(e.target.value)}
+                required
+                autoComplete="off"
+                placeholder="Code fourni par l’administrateur"
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Création…' : 'Créer mon compte'}
+            </Button>
+            <button
+              type="button"
+              onClick={onBack}
+              className="flex items-center justify-center gap-1.5 w-full text-sm text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="h-3.5 w-3.5" /> Retour à la connexion
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+// Helper exporté pour réutilisation au moment du login post-confirmation.
+export async function callGrantFormateur(params: {
+  signupCode: string;
+  prenom?: string;
+  nom?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) return { ok: false, error: 'Session introuvable.' };
+
+  const supabaseUrl =
+    import.meta.env.VITE_SUPABASE_URL ?? 'https://bqknyiyywhvkdngraazk.supabase.co';
+
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/grant-formateur-role`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        signup_code: params.signupCode,
+        prenom: params.prenom,
+        nom: params.nom,
+      }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { ok: false, error: body?.error ?? `Erreur ${res.status}` };
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : 'Erreur réseau' };
+  }
+}

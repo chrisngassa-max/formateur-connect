@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { SignupForm } from '@/components/SignupForm';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +13,11 @@ export function LoginForm() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
+
+  if (mode === 'signup') {
+    return <SignupForm onBack={() => setMode('login')} />;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,6 +54,16 @@ export function LoginForm() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Connexion…' : 'Se connecter'}
             </Button>
+            <div className="text-center text-sm text-muted-foreground">
+              Pas encore de compte ?{' '}
+              <button
+                type="button"
+                onClick={() => setMode('signup')}
+                className="font-medium text-primary hover:underline"
+              >
+                Créer un compte formateur
+              </button>
+            </div>
           </form>
         </CardContent>
       </Card>
