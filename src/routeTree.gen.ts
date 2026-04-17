@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResultatsRouteImport } from './routes/resultats'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GenerateurRouteImport } from './routes/generateur'
 import { Route as EleveRouteImport } from './routes/eleve'
@@ -20,6 +19,7 @@ import { Route as BanqueRouteImport } from './routes/banque'
 import { Route as AssignationRouteImport } from './routes/assignation'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PlayTokenRouteImport } from './routes/play.$token'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 
 const ValidationRoute = ValidationRouteImport.update({
   id: '/validation',
@@ -34,11 +34,6 @@ const SignupRoute = SignupRouteImport.update({
 const ResultatsRoute = ResultatsRouteImport.update({
   id: '/resultats',
   path: '/resultats',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -76,6 +71,11 @@ const PlayTokenRoute = PlayTokenRouteImport.update({
   path: '/play/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -84,10 +84,10 @@ export interface FileRoutesByFullPath {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRoutesByTo {
@@ -97,10 +97,10 @@ export interface FileRoutesByTo {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRoutesById {
@@ -111,10 +111,10 @@ export interface FileRoutesById {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/play/$token': typeof PlayTokenRoute
 }
 export interface FileRouteTypes {
@@ -126,10 +126,10 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
-    | '/reset-password'
     | '/resultats'
     | '/signup'
     | '/validation'
+    | '/auth/callback'
     | '/play/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -139,10 +139,10 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
-    | '/reset-password'
     | '/resultats'
     | '/signup'
     | '/validation'
+    | '/auth/callback'
     | '/play/$token'
   id:
     | '__root__'
@@ -152,10 +152,10 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
-    | '/reset-password'
     | '/resultats'
     | '/signup'
     | '/validation'
+    | '/auth/callback'
     | '/play/$token'
   fileRoutesById: FileRoutesById
 }
@@ -166,10 +166,10 @@ export interface RootRouteChildren {
   EleveRoute: typeof EleveRoute
   GenerateurRoute: typeof GenerateurRoute
   LoginRoute: typeof LoginRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   ResultatsRoute: typeof ResultatsRoute
   SignupRoute: typeof SignupRoute
   ValidationRoute: typeof ValidationRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   PlayTokenRoute: typeof PlayTokenRoute
 }
 
@@ -194,13 +194,6 @@ declare module '@tanstack/react-router' {
       path: '/resultats'
       fullPath: '/resultats'
       preLoaderRoute: typeof ResultatsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -252,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PlayTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -262,10 +262,10 @@ const rootRouteChildren: RootRouteChildren = {
   EleveRoute: EleveRoute,
   GenerateurRoute: GenerateurRoute,
   LoginRoute: LoginRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   ResultatsRoute: ResultatsRoute,
   SignupRoute: SignupRoute,
   ValidationRoute: ValidationRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   PlayTokenRoute: PlayTokenRoute,
 }
 export const routeTree = rootRouteImport
