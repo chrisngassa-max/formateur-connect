@@ -33,13 +33,16 @@ export function SignupForm({ onBack }: SignupFormProps) {
       return;
     }
 
+    const emailRedirectTo =
+      typeof window !== 'undefined' ? window.location.origin : undefined;
+
     setLoading(true);
     try {
       const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
-          // Pas de redirectTo absolu : Supabase utilise le Site URL configuré.
+          ...(emailRedirectTo ? { emailRedirectTo } : {}),
           data: {
             prenom: prenom.trim(),
             nom: nom.trim(),
