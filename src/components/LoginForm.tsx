@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '@/hooks/use-auth';
 import { SignupForm } from '@/components/SignupForm';
 import { supabase } from '@/lib/supabase';
@@ -9,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { GraduationCap, ArrowLeft, Loader2 } from 'lucide-react';
 
 export function LoginForm() {
+  const navigate = useNavigate();
   const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,13 +48,13 @@ export function LoginForm() {
           code === 'invalid_credentials'
             ? 'Email ou mot de passe incorrect.'
             : code === 'email_not_confirmed'
-            ? 'Email non confirmé. Vérifiez votre boîte mail.'
-            : err.message;
+              ? 'Email non confirmé. Vérifiez votre boîte mail.'
+              : err.message;
         setError(`${friendly}${code ? ` (${code})` : ''}`);
         return;
       }
       console.log('[LoginForm] signIn success');
-      // Navigation gérée par onAuthStateChange via AppLayout/router guards
+      void navigate({ to: '/' });
     } catch (caught) {
       console.error('[LoginForm] signIn threw', caught);
       setError('Erreur réseau. Veuillez réessayer.');
@@ -69,14 +71,25 @@ export function LoginForm() {
       setError('Veuillez saisir votre email.');
       return;
     }
+
+    const redirectTo =
+      typeof window !== 'undefined' ? `${window.location.origin}/reset-password` : undefined;
+
     setLoading(true);
-    // Pas de redirectTo absolu : Supabase utilise le Site URL configuré côté backend.
-    const { error: err } = await supabase.auth.resetPasswordForEmail(email);
-    setLoading(false);
-    if (err) {
-      console.error('[LoginForm] resetPasswordForEmail failed', err);
+    try {
+      const { error: err } = await supabase.auth.resetPasswordForEmail(
+        email,
+        redirectTo ? { redirectTo } : undefined,
+      );
+      if (err) {
+        console.error('[LoginForm] resetPasswordForEmail failed', err);
+        setError(err.message);
+        return;
+      }
+      setInfo('Si cet email existe, un lien de réinitialisation a été envoyé.');
+    } finally {
+      setLoading(false);
     }
-    setInfo('Si cet email existe, un lien de réinitialisation a été envoyé.');
   };
 
   if (mode === 'forgot') {
@@ -121,7 +134,7 @@ export function LoginForm() {
                   setError('');
                   setInfo('');
                 }}
-                className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mx-auto"
+                className="mx-auto flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
               >
                 <ArrowLeft className="h-3 w-3" />
                 Retour à la connexion
@@ -150,11 +163,27 @@ export function LoginForm() {
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" disabled={loading} />
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                disabled={loading}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="password">Mot de passe</Label>
-              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" disabled={loading} />
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="current-password"
+                disabled={loading}
+              />
             </div>
             <Button type="submit" className="w-full" disabled={loading || !email || !password}>
               {loading ? (
