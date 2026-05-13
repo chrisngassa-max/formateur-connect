@@ -219,6 +219,13 @@ export interface Database {
       
       exercise_assignments: { Row: ExerciseAssignment; Insert: any; Update: any };
       exercise_attempts: { Row: ExerciseAttempt; Insert: any; Update: any };
+
+      placement_tests: { Row: PlacementTest; Insert: any; Update: any };
+      placement_test_items: { Row: PlacementTestItem; Insert: any; Update: any };
+      placement_test_attempts: { Row: PlacementTestAttempt; Insert: any; Update: any };
+      placement_test_answers: { Row: PlacementTestAnswer; Insert: any; Update: any };
+      placement_test_results: { Row: PlacementTestResult; Insert: any; Update: any };
+      placement_test_exports: { Row: PlacementTestExport; Insert: any; Update: any };
     };
   };
 }
