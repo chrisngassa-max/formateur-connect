@@ -1,9 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Valeurs publiques (anon key) — utilisées en fallback si les env vars Vite ne sont pas injectées.
-const FALLBACK_URL = 'https://bqknyiyywhvkdngraazk.supabase.co';
+const FALLBACK_URL = 'https://jjhnaxuyunpocuuswvyb.supabase.co';
 const FALLBACK_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJxa255aXl5d2h2a2RuZ3JhYXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3NTE4MTMsImV4cCI6MjA4OTMyNzgxM30.3YX2kpfi34laa63PeR92oXp-pQtgEdPox28ZH6W6dQc';
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqaG5heHV5dW5wb2N1dXN3dnliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM3Nzc4NTIsImV4cCI6MjA4OTM1Mzg1Mn0.RQISiZebKc7QMuEkJ1jfIuMaWQw57NSamPxYb7a6OFs';
 
 const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? FALLBACK_URL;
 const supabaseAnonKey =
