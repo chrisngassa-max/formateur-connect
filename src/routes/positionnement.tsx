@@ -76,12 +76,23 @@ function PositionnementPage() {
     setGenerating(false);
   };
 
-  const handlePublish = async (testId: string) => {
+  const handlePublish = async (testId: string, currentVersion: number) => {
+    // Désactiver tous les tests actuellement actifs
+    const { error: deactivateError } = await supabase
+      .from('placement_tests')
+      .update({ is_active: false })
+      .eq('is_active', true);
+
+    if (deactivateError) { toast.error(deactivateError.message); return; }
+
+    // Publier et activer le nouveau test
     const { error } = await supabase
       .from('placement_tests')
-      .update({ 
+      .update({
         status: 'published',
-        published_at: new Date().toISOString()
+        is_active: true,
+        test_version: currentVersion || 1,
+        published_at: new Date().toISOString(),
       })
       .eq('id', testId);
 
@@ -151,7 +162,7 @@ function PositionnementPage() {
                   
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
                     {test.status !== 'published' ? (
-                      <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 h-8" onClick={() => handlePublish(test.id)}>
+                      <Button size="sm" className="gap-1 bg-green-600 hover:bg-green-700 h-8" onClick={() => handlePublish(test.id, test.version)}>
                         <Rocket className="h-3.5 w-3.5" /> Publier
                       </Button>
                     ) : (

@@ -232,10 +232,10 @@ function PositionnementPassation() {
             </p>
             <Button 
               onClick={() => submitMutation.mutate({ 
-                token: token === 'latest' ? null : token, 
-                student_name: studentName, 
+                token: token === 'latest' ? null : token,
+                student_name: studentName,
                 answers,
-                source: 'web'
+                source: 'site_externe'
               })}
               disabled={submitMutation.isPending}
               className="h-14 px-12 bg-amber-500 hover:bg-amber-600 text-white font-bold text-lg rounded-xl"

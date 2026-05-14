@@ -27,7 +27,7 @@ serve(async (req) => {
 
     // 1. Appel à Claude
     const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')
-    
+
     const prompt = `Expert TCF IRN. Génère un test de positionnement pédagogique NON OFFICIEL pour adultes allophones en France. 
 Progression A0→B1.
 Contextes recommandés : ${contexts?.join(', ') || 'préfecture, CAF, mairie, OFII, médecin, logement, transport, banque, France Travail, sécurité sociale, école, impôts'}.

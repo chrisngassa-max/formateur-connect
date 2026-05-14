@@ -4,17 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { 
-  Award, 
-  Target, 
-  BarChart, 
-  ArrowRight, 
-  CheckCircle2, 
+import {
+  Award,
+  Target,
+  BarChart,
+  ArrowRight,
+  CheckCircle2,
   AlertCircle,
   Download,
   Share2,
   ExternalLink,
-  Loader2
+  Loader2,
+  Rocket
 } from 'lucide-react';
 import { 
   Radar, 
@@ -171,12 +172,17 @@ function PositionnementResultat() {
             Parcours de remédiation suggéré
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {(result.remediation_exercises?.suggested_ids || []).map((exId: string, idx: number) => (
-              <Card key={exId} className="border-none shadow-md hover:shadow-xl transition-all cursor-pointer group">
+            {((result.remediation_exercises as any[]) || []).map((ex: any, idx: number) => (
+              <Card key={ex.id || idx} className="border-none shadow-md hover:shadow-xl transition-all cursor-pointer group">
                 <CardContent className="p-6 space-y-4">
-                  <Badge variant="secondary">Exercice {idx + 1}</Badge>
-                  <h4 className="font-bold text-[#0b234a] group-hover:text-amber-600 transition-colors">Renforcement des bases</h4>
-                  <p className="text-xs text-slate-500">Focus sur les points identifiés lors du test.</p>
+                  <div className="flex gap-2">
+                    <Badge variant="secondary">{ex.competence || 'CE'}</Badge>
+                    <Badge variant="outline">{ex.niveau_vise || 'A1'}</Badge>
+                  </div>
+                  <h4 className="font-bold text-[#0b234a] group-hover:text-amber-600 transition-colors">
+                    {ex.titre || `Exercice de remédiation ${idx + 1}`}
+                  </h4>
+                  <p className="text-xs text-slate-500">Exercice recommandé selon votre profil de compétences.</p>
                   <Button variant="link" className="p-0 h-auto text-amber-600 gap-1 font-bold">
                     Commencer <ArrowRight className="h-4 w-4" />
                   </Button>

@@ -26,9 +26,9 @@ serve(async (req) => {
       .select('*')
 
     if (token) {
-      query = query.eq('play_token', token)
+      query = query.eq('play_token', token).eq('status', 'published')
     } else {
-      query = query.eq('status', 'published').order('published_at', { ascending: false }).limit(1)
+      query = query.eq('status', 'published').eq('is_active', true)
     }
 
     const { data: test, error: testError } = await query.single()
