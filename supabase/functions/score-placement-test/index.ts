@@ -55,33 +55,60 @@ serve(async (req) => {
       }
     }
 
-    // 3. Analyse Expert via Claude (EE / EO)
-    const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')
-    const analysisPrompt = `Tu es un évaluateur expert TCF IRN. Analyse les productions suivantes :
-ÉCRIT : ${JSON.stringify(ee_responses)}
-ORAL (Transcription) : ${JSON.stringify(eo_responses)}
+    // 3. Appel à Claude pour correction experte EE/EO
+    const productions = answers.filter(a => ['EE', 'EO'].includes(items.find(i => i.id === a.item_id)?.skill))
+    const productionContext = productions.map(p => {
+      const item = items.find(i => i.id === p.item_id)
+      return {
+        skill: item.skill,
+        level: item.level_cecrl,
+        subject: item.question || item.support,
+        answer: p.answer,
+        word_count: (p.answer || "").split(/\s+/).length
+      }
+    })
 
-Critères : Respect consigne, Grammaire, Vocabulaire, Cohérence.
-Donne une estimation CECRL globale et par compétence.
+    const correctionPrompt = `Tu es un expert en évaluation FLE et correcteur officiel certifié pour le TCF IRN. 
+Ta mission est de noter les productions suivantes de manière strictement objective selon les échelles du CECRL.
 
-Réponds UNIQUEMENT en JSON :
+CRITÈRES :
+1. Adéquation à la tâche (respect consigne, longueur).
+2. Capacité linguistique (grammaire, conjugaison, lexique).
+3. Cohérence et cohésion (connecteurs logiques).
+4. Pragmatique (pour EO : fluidité, argumentation).
+
+PRODUCTIONS À ÉVALUER :
+${JSON.stringify(productionContext)}
+
+FORMAT DE SORTIE (JSON strict) :
 {
-  "global_level": "...",
-  "ee_level": "...",
-  "eo_level": "...",
-  "confidence": "Forte",
-  "strengths": ["...", "..."],
-  "weaknesses": ["...", "..."],
-  "analysis": "..."
+  "evaluations": [
+    {
+      "skill": "EE|EO",
+      "niveau_estime": "A1|A2|B1|B2",
+      "score_sur_20": 0.0,
+      "statut": "acquis|fragile|non_atteint",
+      "analyse_detaillee": {
+        "consigne": "...",
+        "points_forts": ["..."],
+        "lacunes": ["..."],
+        "remediation": "Conseil précis (ex: travailler le passé composé)."
+      },
+      "fiabilite_correction": "haute|moyenne"
+    }
+  ],
+  "global_feedback": "Synthèse pédagogique globale",
+  "confidence": "haute|moyenne"
 }`
 
+    const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')
     const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': CLAUDE_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: analysisPrompt }]
+        max_tokens: 4096,
+        messages: [{ role: 'user', content: correctionPrompt }]
       })
     })
     const claudeData = await claudeRes.json()
@@ -107,28 +134,48 @@ Réponds UNIQUEMENT en JSON :
       }
     }
 
+    // Calcul du Score de Fiabilité
+    const reliabilityFlag = a1_ratio < 0.7
+      ? 'Socle A1 insuffisant — scores B1/B2 non représentatifs'
+      : null
+
     // Détection d'anomalie : B2 réussi mais A1/A2 échoué
     if (b2_ratio > 0.7 && (a1_ratio < 0.4 || a2_ratio < 0.4)) {
       anomalyDetected = true
     }
 
-    // 5. Sauvegarde des résultats
-    await supabaseClient.from('placement_test_results').insert({
+    // 5. Ranking d'offre (Sales Funnel)
+    const { data: offers } = await supabaseClient.from('training_offers').select('*')
+    let recommendedOfferId = null
+    
+    if (finalLevel === 'A1' && a1_ratio < 0.6) {
+      recommendedOfferId = offers?.find(o => o.code === 'PACK_ALPHA')?.id
+    } else if (a1_ratio >= 0.7 && finalLevel === 'A2') {
+      recommendedOfferId = offers?.find(o => o.code === 'CARTE_SEJOUR_A2')?.id
+    } else if (finalLevel === 'B1' && expertAnalysis.evaluations.some((e: any) => e.statut === 'fragile')) {
+      recommendedOfferId = offers?.find(o => o.code === 'RESIDENCE_B1')?.id
+    } else if (finalLevel === 'B1' && a1_ratio > 0.9) {
+      recommendedOfferId = offers?.find(o => o.code === 'NATIO_B2')?.id
+    } else if (expertAnalysis.evaluations.some((e: any) => e.analyse_detaillee.lacunes.some((l: string) => l.toLowerCase().includes('admin') || l.toLowerCase().includes('caf')))) {
+      recommendedOfferId = offers?.find(o => o.code === 'ADMIN_BOOSTER')?.id
+    }
+    const { data: attempt_meta } = await supabaseClient.from('placement_test_attempts').select('student_name').eq('id', attempt_id).single()
+    
+    const { error: insertError } = await supabaseClient.from('placement_test_results').insert({
       attempt_id,
-      global_level: finalLevel,
-      co_level: resultsByLevel.B1.s / resultsByLevel.B1.m > 0.5 ? 'B1' : 'A2', // Simplifié
-      ce_level: resultsByLevel.B1.s / resultsByLevel.B1.m > 0.5 ? 'B1' : 'A2',
-      ee_level: expertAnalysis.ee_level,
-      eo_level: expertAnalysis.eo_level,
+      estimated_level: finalLevel,
       global_score_pct: Math.round((totalScore / maxScore) * 100),
-      strengths: expertAnalysis.strengths,
-      weaknesses: expertAnalysis.weaknesses,
+      recommended_offer_id: recommendedOfferId,
+      strengths: expertAnalysis.evaluations.flatMap((e: any) => e.analyse_detaillee.points_forts),
+      weaknesses: expertAnalysis.evaluations.flatMap((e: any) => e.analyse_detaillee.lacunes),
       detailed_analysis: {
         ...expertAnalysis,
         anomaly_detected: anomalyDetected,
+        reliability_flag: reliabilityFlag,
+        phonetics_note: "Évaluation basée sur la structure et le lexique. La phonétique n'a pas été mesurée par ce simulateur.",
         ratios: { a1_ratio, a2_ratio, b1_ratio, b2_ratio }
       },
-      confidence_level: anomalyDetected ? "Faible (Profil Incohérent)" : expertAnalysis.confidence
+      confidence_level: (anomalyDetected || reliabilityFlag) ? "Faible" : expertAnalysis.confidence
     })
 
     await supabaseClient.from('placement_test_attempts').update({

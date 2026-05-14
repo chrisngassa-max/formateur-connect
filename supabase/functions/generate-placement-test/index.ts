@@ -16,56 +16,57 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Définition des quotas et cases
-    const QUOTAS = [
-      { skill: 'CE', level: 'A1', count: 4, weight: 5 },
-      { skill: 'CE', level: 'A2', count: 4, weight: 10 },
-      { skill: 'CE', level: 'B1', count: 4, weight: 15 },
-      { skill: 'CE', level: 'B2', count: 4, weight: 20 },
-      { skill: 'CO', level: 'A1', count: 4, weight: 5 },
-      { skill: 'CO', level: 'A2', count: 4, weight: 10 },
-      { skill: 'CO', level: 'B1', count: 4, weight: 15 },
-      { skill: 'CO', level: 'B2', count: 4, weight: 20 },
-      { skill: 'EE', level: 'A1_A2', count: 1, weight: 0 },
-      { skill: 'EE', level: 'A2_B1', count: 1, weight: 0 },
-      { skill: 'EE', level: 'B1_B2', count: 1, weight: 0 },
-      { skill: 'EO', level: 'A1_A2', count: 1, weight: 0 },
-      { skill: 'EO', level: 'A2_B1', count: 1, weight: 0 },
-      { skill: 'EO', level: 'B1_B2', count: 1, weight: 0 },
+    // 1. Quotas V2
+    const CASES = [
+      { skill: 'CE', level: 'A1', quota: 4, weight: 5 },
+      { skill: 'CE', level: 'A2', quota: 4, weight: 10 },
+      { skill: 'CE', level: 'B1', quota: 4, weight: 15 },
+      { skill: 'CE', level: 'B2', quota: 4, weight: 20 },
+      { skill: 'CO', level: 'A1', quota: 4, weight: 5 },
+      { skill: 'CO', level: 'A2', quota: 4, weight: 10 },
+      { skill: 'CO', level: 'B1', quota: 4, weight: 15 },
+      { skill: 'CO', level: 'B2', quota: 4, weight: 20 },
+      { skill: 'EE', level: 'A1_A2', levels: ['A1','A2'], quota: 1 },
+      { skill: 'EE', level: 'A2_B1', levels: ['A2','B1'], quota: 1 },
+      { skill: 'EE', level: 'B1_B2', levels: ['B1','B2'], quota: 1 },
+      { skill: 'EO', level: 'A1_A2', levels: ['A1','A2'], quota: 1 },
+      { skill: 'EO', level: 'A2_B1', levels: ['A2','B1'], quota: 1 },
+      { skill: 'EO', level: 'B1_B2', levels: ['B1','B2'], quota: 1 },
     ]
 
-    // 2. Extraction de la banque (exercices statut 'publie' et formateur_id is null)
-    const bankContext: any = {}
-    for (const q of QUOTAS) {
-      const { data: exercises } = await supabaseClient
+    // 2. Fetch Bank Content
+    const bankData: any = {}
+    for (const c of CASES) {
+      let query = supabaseClient
         .from('exercices')
         .select('id, titre, consigne, competence, niveau_vise, contenu')
         .is('formateur_id', null)
         .eq('statut', 'publie')
-        .eq('competence', q.skill.startsWith('E') ? q.skill : q.skill) // Gestion EE/EO/CE/CO
-        .limit(10) // On en prend un peu plus pour laisser Claude choisir
+        .eq('competence', c.skill)
+      
+      if (c.levels) query = query.in('niveau_vise', c.levels)
+      else query = query.eq('niveau_vise', c.level)
 
-      bankContext[`${q.skill}_${q.level}`] = exercises || []
+      const { data } = await query.limit(c.quota * 3)
+      bankData[`${c.skill}_${c.level}`] = data || []
     }
 
-    // 3. Appel à Claude
-    const prompt = `Tu es expert TCF IRN. Ton rôle est de générer un test de positionnement (38 items) en transformant des exercices issus d'une banque pédagogique.
+    // 3. Claude Prompt V2
+    const prompt = `SYSTEM: Tu es expert FLE / TCF IRN. Transforme ces exercices de banque en items de test.
+RÈGLES :
+- CE/CO : QCM 4 options (A/B/C/D), 1 seule bonne.
+- CO : audio_script obligatoire.
+- Distracteurs : Basés sur erreurs FLE classiques (phonétique, faux-amis, temps).
+- Thématiques : Vie quotidienne, Travail, Administration, Citoyenneté.
 
-CONTEXTE BANQUE :
-${JSON.stringify(bankContext)}
+BANQUE : ${JSON.stringify(bankData)}
 
-CONSIGNES DE TRANSFORMATION :
-- CE/CO : Transforme en QCM avec exactement 4 options (A, B, C, D). Une seule bonne réponse.
-- CO : Ajoute obligatoirement un 'audio_script' (dialogue ou message vocal réaliste en France).
-- EE/EO : Reformule la consigne pour une tâche de production claire (ex: écrire un mail, présenter son parcours).
-- SI LA BANQUE EST VIDE pour une case : Génère un item 'from scratch' cohérent (vie en France).
-
-RETOURNE UNIQUEMENT CE JSON (38 items exactement) :
+RETOURNE UNIQUEMENT CE JSON (38 items) :
 {
   "title": "${title || 'Test Expert Banque V2'}",
   "items": [
     {
-      "source_exercise_id": "uuid_de_la_banque_ou_null",
+      "source_exercise_id": "uuid_ou_null",
       "skill": "CE|CO|EE|EO",
       "level_cecrl": "A1|A2|B1|B2",
       "weight": 5|10|15|20,
@@ -93,7 +94,7 @@ RETOURNE UNIQUEMENT CE JSON (38 items exactement) :
     const claudeData = await claudeRes.json()
     const content = JSON.parse(claudeData.content[0].text)
 
-    // 4. Insertion Test & Items (avec TTS)
+    // 4. Test Creation & Items Insert (with TTS)
     const { data: test } = await supabaseClient.from('placement_tests').insert({
       title: content.title,
       status: 'draft',
@@ -107,7 +108,6 @@ RETOURNE UNIQUEMENT CE JSON (38 items exactement) :
     for (const [idx, item] of content.items.entries()) {
       let audioUrl = null
       if (item.skill === 'CO' && item.audio_script && GOOGLE_TTS_API_KEY) {
-        // Logique TTS simplifiée (identique à la v1 mais intégrée ici)
         try {
           const ttsRes = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_API_KEY}`, {
             method: 'POST',
