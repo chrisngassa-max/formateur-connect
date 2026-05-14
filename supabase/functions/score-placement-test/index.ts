@@ -7,194 +7,130 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    const { token, student_name, student_id, answers, source = 'site_externe' } = await req.json()
-
-    if (!token || !answers) throw new Error('Données manquantes')
-
+    const { attempt_id, answers, student_name } = await req.json()
+    
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // 1. Récupérer le test
-    const { data: test, error: testError } = await supabaseClient
-      .from('placement_tests')
-      .select('id, title')
-      .eq('play_token', token)
+    // 1. Récupération des items pour correction
+    const { data: attempt } = await supabaseClient
+      .from('placement_test_attempts')
+      .select('*, placement_tests(*)')
+      .eq('id', attempt_id)
       .single()
 
-    if (testError || !test) throw new Error('Test invalide')
-
-    // 2. Récupérer les items avec les bonnes réponses
-    const { data: items, error: itemsError } = await supabaseClient
+    const { data: items } = await supabaseClient
       .from('placement_test_items')
       .select('*')
-      .eq('test_id', test.id)
+      .eq('test_id', attempt.test_id)
 
-    if (itemsError) throw itemsError
-
-    // 3. Correction automatique (CE/CO)
-    let totalPoints = 0
-    let maxPossiblePoints = 0
-    const processedAnswers = []
-    const skillScores: any = { CE: { score: 0, max: 0 }, CO: { score: 0, max: 0 }, EE: { score: 0, max: 0 }, EO: { score: 0, max: 0 } }
+    // 2. Correction QCM (CE/CO) et préparation EE/EO
+    let totalScore = 0
+    let maxScore = 0
+    const resultsByLevel = { A1: { s: 0, m: 0 }, A2: { s: 0, m: 0 }, B1: { s: 0, m: 0 }, B2: { s: 0, m: 0 } }
+    const ee_responses = []
+    const eo_responses = []
 
     for (const item of items) {
-      const studentAnswer = answers.find((a: any) => a.item_id === item.id)
-      const weight = item.difficulty || 1
-      maxPossiblePoints += weight
-      skillScores[item.skill].max += weight
-
-      let isCorrect = null
-      let score = 0
+      const studentAnswer = answers.find(a => a.item_id === item.id)?.answer
+      const isCorrect = studentAnswer === item.correct_answer
+      const weight = item.weight || (item.level_cecrl === 'A1' ? 5 : item.level_cecrl === 'A2' ? 10 : item.level_cecrl === 'B1' ? 15 : 20)
 
       if (['CE', 'CO'].includes(item.skill)) {
-        isCorrect = studentAnswer?.answer === item.correct_answer
-        score = isCorrect ? weight : 0
-        totalPoints += score
-        skillScores[item.skill].score += score
-      } else {
-        // EE/EO : pas de correction auto pour le moment
-        isCorrect = null
-        score = 0
+        maxScore += weight
+        if (isCorrect) {
+          totalScore += weight
+          resultsByLevel[item.level_cecrl].s += weight
+        }
+        resultsByLevel[item.level_cecrl].m += weight
+      } else if (item.skill === 'EE') {
+        ee_responses.push({ question: item.question, response: studentAnswer, level: item.level_cecrl })
+      } else if (item.skill === 'EO') {
+        eo_responses.push({ question: item.question, response: studentAnswer, level: item.level_cecrl })
       }
-
-      processedAnswers.push({
-        item_id: item.id,
-        student_answer: studentAnswer?.answer || '',
-        is_correct: isCorrect,
-        score: score,
-        time_spent: studentAnswer?.time_spent || 0
-      })
     }
 
-    // 4. Estimation du niveau CECRL
-    const scorePct = (totalPoints / (maxPossiblePoints || 1)) * 100
-    let estimatedLevel = "A0_pre_A1"
-    if (scorePct >= 91) estimatedLevel = "B1_acquis"
-    else if (scorePct >= 83) estimatedLevel = "B1_fragile"
-    else if (scorePct >= 73) estimatedLevel = "A2_acquis"
-    else if (scorePct >= 61) estimatedLevel = "A2_fragile"
-    else if (scorePct >= 46) estimatedLevel = "A1_acquis"
-    else if (scorePct >= 26) estimatedLevel = "A1_fragile"
-
-    // 5. Recherche de remédiation (exercices de la banque globale)
-    // On cherche des exercices qui correspondent au niveau estimé et à la compétence la plus faible
-    const weakestSkill = Object.keys(skillScores).reduce((a, b) => 
-      (skillScores[a].score / (skillScores[a].max || 1)) < (skillScores[b].score / (skillScores[b].max || 1)) ? a : b
-    )
-
-    const { data: remediation } = await supabaseClient
-      .from('exercices')
-      .select('id, titre, competence, niveau_vise')
-      .eq('competence', weakestSkill)
-      .eq('statut', 'published')
-      .is('formateur_id', null)
-      .limit(5)
-
-    // 6. Analyse pédagogique par Claude
+    // 3. Analyse Expert via Claude (EE / EO)
     const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY')
-    const analysisPrompt = `Analyse les résultats d'un élève au test "${test.title}".
-Nom: ${student_name}
-Niveau estimé: ${estimatedLevel}
-Score global: ${scorePct.toFixed(1)}%
-Scores par compétence:
-- CE: ${((skillScores.CE.score / skillScores.CE.max) * 100).toFixed(0)}%
-- CO: ${((skillScores.CO.score / skillScores.CO.max) * 100).toFixed(0)}%
+    const analysisPrompt = `Tu es un évaluateur expert TCF IRN. Analyse les productions suivantes :
+ÉCRIT : ${JSON.stringify(ee_responses)}
+ORAL (Transcription) : ${JSON.stringify(eo_responses)}
 
-Produis un bilan pédagogique court (3-4 phrases) avec :
-1. Les points forts (basés sur les compétences réussies)
-2. Les axes d'amélioration
-3. Le groupe conseillé (A1, A2, B1)
-4. Un conseil de parcours (ex: "Focus administratif", "Renforcement oral")
+Critères : Respect consigne, Grammaire, Vocabulaire, Cohérence.
+Donne une estimation CECRL globale et par compétence.
 
-Retourne un JSON :
+Réponds UNIQUEMENT en JSON :
 {
+  "global_level": "...",
+  "ee_level": "...",
+  "eo_level": "...",
+  "confidence": "Forte",
   "strengths": ["...", "..."],
   "weaknesses": ["...", "..."],
-  "recommended_group": "...",
-  "recommended_pathway": "...",
-  "teacher_notes": "..."
+  "analysis": "..."
 }`
 
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': CLAUDE_API_KEY!,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
+      headers: { 'x-api-key': CLAUDE_API_KEY!, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: analysisPrompt }],
-      }),
-    })
-
-    const claudeData = await response.json()
-    const pedagogicalAnalysis = JSON.parse(claudeData.content[0].text)
-
-    // 7. Enregistrement de la tentative
-    const { data: attempt, error: attemptError } = await supabaseClient
-      .from('placement_test_attempts')
-      .insert({
-        test_id: test.id,
-        student_id: student_id || null,
-        student_name: student_name,
-        status: 'completed',
-        total_score: totalPoints,
-        max_score: maxPossiblePoints,
-        estimated_level: estimatedLevel,
-        source: source,
-        completed_at: new Date().toISOString()
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: analysisPrompt }]
       })
-      .select()
-      .single()
+    })
+    const claudeData = await claudeRes.json()
+    const expertAnalysis = JSON.parse(claudeData.content[0].text)
 
-    if (attemptError) throw attemptError
-
-    // 8. Enregistrement des réponses
-    await supabaseClient.from('placement_test_answers').insert(
-      processedAnswers.map(a => ({ ...a, attempt_id: attempt.id }))
-    )
-
-    // 9. Enregistrement du résultat détaillé
-    const resultData = {
-      attempt_id: attempt.id,
-      global_level: estimatedLevel,
-      ce_level: estimatedLevel, // Simplifié pour le MVP
-      co_level: estimatedLevel,
-      global_score_pct: scorePct,
-      ce_score_pct: (skillScores.CE.score / skillScores.CE.max) * 100,
-      co_score_pct: (skillScores.CO.score / skillScores.CO.max) * 100,
-      strengths: pedagogicalAnalysis.strengths,
-      weaknesses: pedagogicalAnalysis.weaknesses,
-      recommended_group: pedagogicalAnalysis.recommended_group,
-      recommended_pathway: pedagogicalAnalysis.recommended_pathway,
-      teacher_notes: pedagogicalAnalysis.teacher_notes,
-      remediation_exercises: remediation || [],
-      raw_analysis: pedagogicalAnalysis
+    // 4. Calcul du niveau global (Logique par paliers)
+    let finalLevel = 'A0'
+    if (resultsByLevel.A1.s / resultsByLevel.A1.m > 0.5) {
+      finalLevel = 'A1'
+      if (resultsByLevel.A2.s / resultsByLevel.A2.m > 0.6) {
+        finalLevel = 'A2'
+        if (resultsByLevel.B1.s / resultsByLevel.B1.m > 0.65) {
+          finalLevel = 'B1'
+          if (resultsByLevel.B2.s / resultsByLevel.B2.m > 0.65) finalLevel = 'B2'
+        }
+      }
     }
 
-    await supabaseClient.from('placement_test_results').insert(resultData)
+    // 5. Sauvegarde des résultats
+    await supabaseClient.from('placement_test_results').insert({
+      attempt_id,
+      global_level: finalLevel,
+      co_level: resultsByLevel.B1.s / resultsByLevel.B1.m > 0.5 ? 'B1' : 'A2', // Simplifié
+      ce_level: resultsByLevel.B1.s / resultsByLevel.B1.m > 0.5 ? 'B1' : 'A2',
+      ee_level: expertAnalysis.ee_level,
+      eo_level: expertAnalysis.eo_level,
+      global_score_pct: Math.round((totalScore / maxScore) * 100),
+      strengths: expertAnalysis.strengths,
+      weaknesses: expertAnalysis.weaknesses,
+      confidence_level: expertAnalysis.confidence,
+      detailed_analysis: expertAnalysis
+    })
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      attempt_id: attempt.id,
-      result: resultData
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    await supabaseClient.from('placement_test_attempts').update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      total_score: totalScore,
+      max_score: maxScore,
+      estimated_level: finalLevel
+    }).eq('id', attempt_id)
+
+    return new Response(JSON.stringify({ success: true, attempt_id }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
 
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 400,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     })
   }
 })
