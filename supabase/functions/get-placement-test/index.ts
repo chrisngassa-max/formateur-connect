@@ -43,7 +43,7 @@ serve(async (req) => {
     // 2. Récupérer les items (on exclut explicitement correct_answer et explanation)
     const { data: items, error: itemsError } = await supabaseClient
       .from('placement_test_items')
-      .select('id, skill, level_cecrl, difficulty, context, support_type, support, question, options, audio_script, score, order_index')
+      .select('id, skill, level_cecrl, weight, context, support, question, options, audio_url, order_index')
       .eq('test_id', test.id)
       .order('order_index', { ascending: true })
 

@@ -87,17 +87,29 @@ Réponds UNIQUEMENT en JSON :
     const claudeData = await claudeRes.json()
     const expertAnalysis = JSON.parse(claudeData.content[0].text)
 
-    // 4. Calcul du niveau global (Logique par paliers)
+    // 4. Calcul du niveau global (Logique par paliers + Détection d'anomalies)
     let finalLevel = 'A0'
-    if (resultsByLevel.A1.s / resultsByLevel.A1.m > 0.5) {
+    let anomalyDetected = false
+
+    const a1_ratio = resultsByLevel.A1.m > 0 ? resultsByLevel.A1.s / resultsByLevel.A1.m : 0
+    const a2_ratio = resultsByLevel.A2.m > 0 ? resultsByLevel.A2.s / resultsByLevel.A2.m : 0
+    const b1_ratio = resultsByLevel.B1.m > 0 ? resultsByLevel.B1.s / resultsByLevel.B1.m : 0
+    const b2_ratio = resultsByLevel.B2.m > 0 ? resultsByLevel.B2.s / resultsByLevel.B2.m : 0
+
+    if (a1_ratio > 0.5) {
       finalLevel = 'A1'
-      if (resultsByLevel.A2.s / resultsByLevel.A2.m > 0.6) {
+      if (a2_ratio > 0.6) {
         finalLevel = 'A2'
-        if (resultsByLevel.B1.s / resultsByLevel.B1.m > 0.65) {
+        if (b1_ratio > 0.65) {
           finalLevel = 'B1'
-          if (resultsByLevel.B2.s / resultsByLevel.B2.m > 0.65) finalLevel = 'B2'
+          if (b2_ratio > 0.65) finalLevel = 'B2'
         }
       }
+    }
+
+    // Détection d'anomalie : B2 réussi mais A1/A2 échoué
+    if (b2_ratio > 0.7 && (a1_ratio < 0.4 || a2_ratio < 0.4)) {
+      anomalyDetected = true
     }
 
     // 5. Sauvegarde des résultats
@@ -111,8 +123,12 @@ Réponds UNIQUEMENT en JSON :
       global_score_pct: Math.round((totalScore / maxScore) * 100),
       strengths: expertAnalysis.strengths,
       weaknesses: expertAnalysis.weaknesses,
-      confidence_level: expertAnalysis.confidence,
-      detailed_analysis: expertAnalysis
+      detailed_analysis: {
+        ...expertAnalysis,
+        anomaly_detected: anomalyDetected,
+        ratios: { a1_ratio, a2_ratio, b1_ratio, b2_ratio }
+      },
+      confidence_level: anomalyDetected ? "Faible (Profil Incohérent)" : expertAnalysis.confidence
     })
 
     await supabaseClient.from('placement_test_attempts').update({

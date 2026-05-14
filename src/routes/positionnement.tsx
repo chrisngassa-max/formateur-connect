@@ -20,7 +20,8 @@ import {
   CheckCircle,
   Eye,
   Settings2,
-  Rocket
+  Rocket,
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -38,10 +39,10 @@ function PositionnementPage() {
 
   // Formulaire de génération
   const [genForm, setGenForm] = useState({
-    title: 'Test de positionnement TCF IRN',
-    levels: ['A0', 'A1', 'A2', 'B1'],
+    title: 'Test de positionnement Expert TCF',
+    levels: ['A1', 'A2', 'B1', 'B2'],
     skills: ['CE', 'CO', 'EE', 'EO'],
-    contexts: ['préfecture', 'CAF', 'mairie', 'santé', 'logement']
+    contexts: ['préfecture', 'travail', 'mairie', 'santé', 'banque']
   });
 
   useEffect(() => {
@@ -240,7 +241,8 @@ function PositionnementPage() {
                     <th className="text-left p-4">Étudiant</th>
                     <th className="text-left p-4">Test</th>
                     <th className="text-left p-4">Date</th>
-                    <th className="text-center p-4">Niveau estimé</th>
+                    <th className="text-center p-4">Niveau</th>
+                    <th className="text-center p-4">Fiabilité</th>
                     <th className="text-right p-4">Action</th>
                   </tr>
                 </thead>
