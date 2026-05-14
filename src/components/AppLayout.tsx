@@ -7,6 +7,7 @@ import {
   Users, 
   GraduationCap, 
   BarChart3,
+  Target,
   LogOut,
   Menu,
   X
@@ -16,6 +17,7 @@ import { useAuth } from '@/hooks/use-auth';
 
 const formateurNav = [
   { to: '/' as const, label: 'Dashboard', icon: LayoutDashboard },
+  { to: '/positionnement' as const, label: 'Positionnement', icon: Target },
   { to: '/generateur' as const, label: 'Générateur', icon: Wand2 },
   { to: '/validation' as const, label: 'Validation', icon: CheckCircle },
   { to: '/banque' as const, label: 'Banque', icon: Library },
