@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ValidationRouteImport } from './routes/validation'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as ResultatsRouteImport } from './routes/resultats'
+import { Route as PositionnementRouteImport } from './routes/positionnement'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GenerateurRouteImport } from './routes/generateur'
 import { Route as EleveRouteImport } from './routes/eleve'
@@ -34,6 +35,11 @@ const SignupRoute = SignupRouteImport.update({
 const ResultatsRoute = ResultatsRouteImport.update({
   id: '/resultats',
   path: '/resultats',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PositionnementRoute = PositionnementRouteImport.update({
+  id: '/positionnement',
+  path: '/positionnement',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
+  '/positionnement': typeof PositionnementRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
+  '/positionnement': typeof PositionnementRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/eleve': typeof EleveRoute
   '/generateur': typeof GenerateurRoute
   '/login': typeof LoginRoute
+  '/positionnement': typeof PositionnementRoute
   '/resultats': typeof ResultatsRoute
   '/signup': typeof SignupRoute
   '/validation': typeof ValidationRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
+    | '/positionnement'
     | '/resultats'
     | '/signup'
     | '/validation'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
+    | '/positionnement'
     | '/resultats'
     | '/signup'
     | '/validation'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/eleve'
     | '/generateur'
     | '/login'
+    | '/positionnement'
     | '/resultats'
     | '/signup'
     | '/validation'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   EleveRoute: typeof EleveRoute
   GenerateurRoute: typeof GenerateurRoute
   LoginRoute: typeof LoginRoute
+  PositionnementRoute: typeof PositionnementRoute
   ResultatsRoute: typeof ResultatsRoute
   SignupRoute: typeof SignupRoute
   ValidationRoute: typeof ValidationRoute
@@ -194,6 +207,13 @@ declare module '@tanstack/react-router' {
       path: '/resultats'
       fullPath: '/resultats'
       preLoaderRoute: typeof ResultatsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/positionnement': {
+      id: '/positionnement'
+      path: '/positionnement'
+      fullPath: '/positionnement'
+      preLoaderRoute: typeof PositionnementRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   EleveRoute: EleveRoute,
   GenerateurRoute: GenerateurRoute,
   LoginRoute: LoginRoute,
+  PositionnementRoute: PositionnementRoute,
   ResultatsRoute: ResultatsRoute,
   SignupRoute: SignupRoute,
   ValidationRoute: ValidationRoute,
