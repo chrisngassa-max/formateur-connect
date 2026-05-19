@@ -121,22 +121,20 @@ Deno.test("Profil 6 : Lecteur Lent (temps de réponse excessif)", () => {
   const items = createMockItems()
   const answers: Answer[] = []
 
-  // A1 : Médiane très rapide (e.g. 10s)
-  items.filter(i => i.level_cecrl === "A1").forEach(i => {
+  // A1, A2, B1 : correct et rapide (10s)
+  items.filter(i => ["A1", "A2", "B1"].includes(i.level_cecrl)).forEach(i => {
     answers.push({ item_id: i.id, answer: "A", time_spent: 10 })
   })
-  // A2 : Temps anormalement long (e.g. 120s > 2x médiane A1)
-  items.filter(i => i.level_cecrl === "A2").forEach(i => {
+  // B2 : correct et très lent (120s > 2x médiane B1 de 10s)
+  items.filter(i => i.level_cecrl === "B2").forEach(i => {
     answers.push({ item_id: i.id, answer: "A", time_spent: 120 })
-  })
-  // B1 et B2 : faux
-  items.filter(i => ["B1", "B2"].includes(i.level_cecrl)).forEach(i => {
-    answers.push({ item_id: i.id, answer: "B", time_spent: 10 })
   })
 
   const results = scorePlacement(items, answers)
-  // La fiabilité de A2 doit être pénalisée (inférieure à 1.0)
-  assertNotEquals(results.reliability_by_level.A2, 1.0)
+  // B2 doit être pénalisé à 0.7
+  assertEquals(results.reliability_by_level.B2, 0.7)
+  // B1 doit rester intact à 1.0
+  assertEquals(results.reliability_by_level.B1, 1.0)
 })
 
 // 7. Profil Tricheur (Vitesse suspecte B1/B2 correcte)
@@ -181,8 +179,39 @@ Deno.test("Profil 8 : Fatigue (Chute brutale de performance et temps de réponse
   assertEquals(results.flags.includes("FATIGUE_DETECTEE"), true)
 })
 
-// 9. Profil Asymétrique CE/CO
-Deno.test("Profil 9 : Asymétrique CE/CO (> 25% écart)", () => {
+// 9. Profil Miraculé (Échec A2 mais réussite B1)
+Deno.test("Profil 9 : Miraculé (Échec A2 mais réussite B1)", () => {
+  const items = createMockItems()
+  const answers: Answer[] = []
+
+  // A1 : tout juste
+  items.filter(i => i.level_cecrl === "A1").forEach(i => {
+    answers.push({ item_id: i.id, answer: "A", time_spent: 30 })
+  })
+  // A2 : seulement 2 réponses correctes sur 8 (25% < 50% de preuve)
+  const a2Items = items.filter(i => i.level_cecrl === "A2")
+  a2Items.forEach((i, idx) => {
+    answers.push({ item_id: i.id, answer: idx < 2 ? "A" : "B", time_spent: 30 })
+  })
+  // B1 : 7 réponses correctes sur 8 (87.5% >= 75%)
+  const b1Items = items.filter(i => i.level_cecrl === "B1")
+  b1Items.forEach((i, idx) => {
+    answers.push({ item_id: i.id, answer: idx < 7 ? "A" : "B", time_spent: 30 })
+  })
+  // B2 : tout faux
+  items.filter(i => i.level_cecrl === "B2").forEach(i => {
+    answers.push({ item_id: i.id, answer: "B", time_spent: 30 })
+  })
+
+  const results = scorePlacement(items, answers)
+  // Pas de preuve sur A2 car le taux A2 est trop faible (25% < 50%)
+  assertEquals(results.flags.includes("SOCLE_VALIDE_PAR_PREUVE_A2"), false)
+  // Le profil doit être marqué comme incohérent
+  assertEquals(results.flags.includes("PROFIL_INCOHERENT"), true)
+})
+
+// 10. Profil Asymétrique CE/CO
+Deno.test("Profil 10 : Asymétrique CE/CO (> 25% écart)", () => {
   const items = createMockItems()
   const answers: Answer[] = []
 
