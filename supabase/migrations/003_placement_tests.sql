@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS public.placement_tests (
     competences text[] DEFAULT '{}',
     contexte text,
     version int DEFAULT 1,
-    play_token text UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+    play_token text UNIQUE DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
     created_by uuid REFERENCES public.profiles(id),
     validated_by uuid REFERENCES public.profiles(id),
     published_at timestamptz,
@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.placement_test_exports (
     test_id uuid REFERENCES public.placement_tests(id) ON DELETE CASCADE,
     schema_version text DEFAULT 'placement_test_v1',
     export_status text DEFAULT 'active' CHECK (export_status IN ('active', 'revoked')),
-    access_token text UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+    access_token text UNIQUE DEFAULT encode(extensions.gen_random_bytes(32), 'hex'),
     total_attempts int DEFAULT 0,
     created_at timestamptz DEFAULT now(),
     last_used_at timestamptz
