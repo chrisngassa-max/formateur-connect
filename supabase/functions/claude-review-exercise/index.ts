@@ -31,11 +31,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+    // Utilisation unifiée des variables de secret pour compatibilité transitoire
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? Deno.env.get('CLAUDE_API_KEY');
     if (!anthropicKey) {
-      console.error('[claude-review-exercise] Missing ANTHROPIC_API_KEY secret');
+      console.error('[claude-review-exercise] Missing ANTHROPIC_API_KEY/CLAUDE_API_KEY secret');
       return new Response(
-        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY secret' }),
+        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY/CLAUDE_API_KEY secret' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -49,7 +50,7 @@ Deno.serve(async (req) => {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2048,
         system: 'Tu es expert en didactique du FLE et en préparation au TCF IRN. Analyse les exercices et retourne uniquement du JSON strict.',
         messages: [{

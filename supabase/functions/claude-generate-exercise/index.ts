@@ -47,11 +47,12 @@ Deno.serve(async (req) => {
     })) ?? [];
 
     // 3. Appeler Claude
-    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY');
+    // Utilisation unifiée des variables de secret pour compatibilité transitoire
+    const anthropicKey = Deno.env.get('ANTHROPIC_API_KEY') ?? Deno.env.get('CLAUDE_API_KEY');
     if (!anthropicKey) {
-      console.error('[claude-generate-exercise] Missing ANTHROPIC_API_KEY secret');
+      console.error('[claude-generate-exercise] Missing ANTHROPIC_API_KEY/CLAUDE_API_KEY secret');
       return new Response(
-        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY secret' }),
+        JSON.stringify({ error: 'Missing ANTHROPIC_API_KEY/CLAUDE_API_KEY secret' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
       );
     }
@@ -78,7 +79,7 @@ Exercices existants à ne pas reproduire : ${JSON.stringify(existingContext)}`;
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 4096,
         system: systemPrompt,
         messages: [{ role: 'user', content: userMessage }],
